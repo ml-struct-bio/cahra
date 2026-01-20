@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "CAHRA-metrics"
+version = "0.0.1"
+authors = [
+  { name="Joel Greer", email="joel.greer@stfc.ac.uk" },
+  { name="Tom Burnley" },
+  { name="Pilar Cossio" },
+  { name="David Silva Sanchez" },
+]
+description = "Metric calculation for CAHRA Challenge, conformational heterogeneity dataset"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+keywords = ["roodmus", "cryo-em", "micrographs", "synthetic", "single-particle", "heterogeneity", "reconstruction", "ensemble"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "lxml_html_clean",
+]
+
+[project.scripts]
+CAHRA-metrics = "CAHRA-metrics.cli:main"
+
+[project.urls]
+"Homepage" = "https://github.com/JatGreer/CAHRA-metrics"
+"Bug Tracker" = "https://github.com/JatGreer/CAHRA-metrics/issues"
+
+[tool.licensecheck]
+license = "mit"
+file = "licensecheck.json"
+format = "json"
