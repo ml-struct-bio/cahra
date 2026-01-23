@@ -58,14 +58,16 @@ def main():
     subparsers.required = True
 
     modules = [
+        cahra_metrics.validate_ens.validate_ensembles,
         cahra_metrics.minrmsd.calc_min_rmsd_metrics,
         cahra_metrics.pcv.calc_pcv,
     ]
 
-    module_helptext = [
+    module_helptext = [ # TODO update module helptext
         "Sampling a molecular dynamics trajectory and saving the"
         + " conformations to PDB files.",
         "Simulation of micrograph/tomogram dataset using Parakeet software.",
+        "3rd one",
     ]
 
     for helptext, module in zip(module_helptext, modules):
