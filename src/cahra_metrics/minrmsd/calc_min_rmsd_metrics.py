@@ -120,6 +120,7 @@ def align_min_rmsd(
         pred_traj: mda.Universe,
         GT_traj: mda.Universe,
         pred_traj_copy: mda.Universe,
+        verbose: bool = False,
 ) -> tuple[dict, mda.Universe]:
 
     # loop through each predicted structure and find GT structure with min RMSD
@@ -149,6 +150,8 @@ def align_min_rmsd(
             )
         rmsd_vals=np.array(rmsd_vals,dtype=float)
         min_index = np.argmin(rmsd_vals)
+        # TODO: decide whether to also store pairwise min-rmsds to dictionary. May be useful for later analyses
+        # when rmsd_min dict is saved to file?
         rmsd_min["pred_index"].append(i)
         rmsd_min["rmsd_min"].append(rmsd_vals[min_index])
         rmsd_min["gt_index"].append(min_index)
@@ -170,13 +173,16 @@ def align_min_rmsd(
         rmsd_unaligned, rmsd_aligned = align.alignto(
             pred_traj,
             GT_traj,
-            select="backbone"
+            select="backbone" # not ignoring hist-tag here
         )
-        print("{}: {} -> {}".format(
-            pred_idx,
-            rmsd_unaligned,
-            rmsd_aligned,
-        ))
+        if verbose:
+            print(
+                "{}: {} -> {}".format(
+                    pred_idx,
+                    rmsd_unaligned,
+                    rmsd_aligned,
+                )
+            )
         # check the alignment is approx the same as reported by rms.rmsd above
         assert(
             np.isclose(
@@ -265,7 +271,7 @@ def main(args):
             print(os.path.basename(conf))
     
     # TODO check all confs in each ensemble have same atoms present and same number of atoms
-    # and no hydrogens
+    # and no hydrogens... ie: add the code to validate all the mmcifs are valid (validate_ensembles)!
     
     # ------------------------------------------------------------------------------------
     # STEP 2 - create mda universes to hold the ensembles
@@ -305,10 +311,15 @@ def main(args):
     aligner_gt_u = align.AlignTraj(
         gt_u,
         gt_u,
-        select='backbone and resnum 10:1014',
+        select='backbone and resnum 10:1014', # TODO decide on whether to exclude hist-tag in GT alignment (if this is maintained). Make consistent with optimal alignmen in pred-ensebmle below.
         in_memory=True
     ).run()
     # NOTE: use in_memory so the alignments persist!!!!!
+    # NOTE TODO: if using mass-weighting in RMSD/RMSF calculations, must also use it to
+    # do the GT alignment (as this is via min RMSD! Hence if using mass-weighting keep this alignment
+    # AND add weight="mass" as an argument!)
+    # TODO SAVE GT mass/charge weighted aligned conformations to file (mmcif)
+    # for reuse in PCV calculation
 
     # we don't align pred_ensemble to itself. Only is aligned on a per-conf basis to GT confs
 
@@ -323,21 +334,32 @@ def main(args):
         gt_u,
         pred_u_copy,
     )
-    for key,val in pred_u_rmsd_min_dict.items():
-        print("{}:{}".format(key,val))
+    if args.verbose:
+        for key,val in pred_u_rmsd_min_dict.items():
+            print("{}:{}".format(key,val))
+    # TODO SAVE mass/charge-weighted min-RMSD-aligned pred-ensemble to file for reuse 
+    # in PCV (and any other future comparison to mass/charge-weighted GT-ensemble!)
 
     # ------------------------------------------------------------------------------------
     # STEP 5 - get SAC
     SAC = np.average(np.array(pred_u_rmsd_min_dict["rmsd_min"]))
     print(SAC)
     # TODO Save pred_u_rmsd_min_dict and SAC/LFC values to file (use dict for latter?)
+    # also could save atom-wise RMSF values for aligned-pred-ensemble (AND GT ensemble, to check consistency of alignment/realignmnet if that is kept in the above code)
 
     # ------------------------------------------------------------------------------------
     # STEP 6 - calc RMSF on per-residue basis to allow calculation of LFC
     # TODO whether+how to mass-weight this in MDAnalysis? Currently just give all atoms same
     # weighting. The hydrogens should not be present in the submitted (or GT) mmcif files
     # but ensuring this is the case is a TODO above
-    
+    # It appears weights can be applied to an atomgroup object, ie provide rms.RMSF with
+    # the argument 'weights="mass"', in similar way to RMSD calc above
+    # see: https://docs.mdanalysis.org/stable/documentation_pages/core/groups.html#MDAnalysis.core.groups.AtomGroup
+    # HOWEVER, rms.RMSF reports that it does not use mass weighting...
+    # see https://www.mdanalysis.org/pmda/api/rmsf.html
+    # If this is the case, then do not mass/charge weight anything unless you are sure it can be used
+    # in all atomic metrics. Do state that RMSDs are NOT MASS WEIGHTED if you do not mass-weight them
+
     # so here get the RMSF of our aligned GT ensemble for each atom
     rmsf_gt = rms.RMSF(gt_u.select_atoms("protein")).run()
     # and for the min-RMSD-aligned pred ensemble
@@ -350,11 +372,12 @@ def main(args):
         rmsf_gt.results.rmsf,
         rmsf_pred.results.rmsf,
     )
-    print(
-        "EDC:{}\nEDC_stddev:{}".format(
-            lfc_all, lfc_stddev
+    if args.verbose:
+        print(
+            "EDC:{}\nEDC_stddev:{}".format(
+                lfc_all, lfc_stddev
+            )
         )
-    )
 
     make_plot_lfc(abs_diff_rmsf)
     make_over_under_represent_het_plot(
@@ -366,6 +389,8 @@ def main(args):
     # TODO save min-RMSD aligned predicted ensemble to file
     # TODO option to also visualise/save rmsf via temp factor in (saved) min-RMSD pred-ensemble mda universe
     # see https://userguide.mdanalysis.org/stable/examples/analysis/alignment_and_rms/rmsf.html#Visualising-RMSF-as-B-factors
+    # NOTE I have done this previously - example in extract_frames_6xou_unsteered_0-200ns_alignment_metric_tests.ipynb
+    # (ie: the notebook which showed volume-ensemble-metrics weren't invariant)
 
 
 if __name__ == "__main__":

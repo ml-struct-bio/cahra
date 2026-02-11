@@ -47,6 +47,7 @@ np.random.seed(7)
 
 # TODO update metrics website to note that PCV is calculated using atom coords, not volumes!!!
 
+# TODO update to do PCV on mass/charge weighted aligned GT ensemble (or however it is self-aligned before the pred-ensemble is aligned to it!)
 
 def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Set up arguments for parsing
