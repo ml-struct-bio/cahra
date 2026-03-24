@@ -31,6 +31,8 @@ import argparse
 import pkg_resources
 from pathlib import Path
 
+import cahra_metrics.convert_ensemble
+import cahra_metrics.validate_ensemble
 import cahra_metrics.minrmsd.calc_min_rmsd_metrics
 import cahra_metrics.pcv.calc_pcv
 
@@ -58,16 +60,22 @@ def main():
     subparsers.required = True
 
     modules = [
+        cahra_metrics.validate_ens.convert_ensemble,
         cahra_metrics.validate_ens.validate_ensembles,
         cahra_metrics.minrmsd.calc_min_rmsd_metrics,
         cahra_metrics.pcv.calc_pcv,
     ]
 
-    module_helptext = [ # TODO update module helptext
-        "Sampling a molecular dynamics trajectory and saving the"
-        + " conformations to PDB files.",
-        "Simulation of micrograph/tomogram dataset using Parakeet software.",
-        "3rd one",
+    module_helptext = [
+        "Convert an ensemble of conformations from one file-type to another via"
+        + "gemmi",
+        "Validate an ensemble against itself and/or a reference ensemble.",
+        "All to all optimal alignment of ensemble(s) to reference ensemble via"
+        + " min-RMSD heavy-atom alignment and calculation of resulting RMSD"
+     " and RMSF-based metrics.",
+        "Calculate proportion of captured variance between ensemble(s)"
+        + " and reference ensemble. Ensure ensembles are pre-aligned (which"
+        + " can be done by running RMSD/RMSF metric calculation).",
     ]
 
     for helptext, module in zip(module_helptext, modules):

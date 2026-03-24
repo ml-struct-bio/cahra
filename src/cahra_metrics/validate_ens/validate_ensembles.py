@@ -26,6 +26,14 @@ https://opensource.org/license/mit
 
 """
 
+import argparse
+
+import gemmi
+import numpy as np
+
+from cahra_metrics.utilities.utils import get_ensemble, Ensemble_Stats
+
+
 def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Set up arguments for parsing
 
@@ -59,26 +67,196 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--extension",
+        "-e",
+        help=(
+            "File type (extension) to convert to "
+        ),
+        choices=["cif", "pdb", "json"],
+        default="cif"
+    )
+
+    parser.add_argument(
         "--verbose",
         "-v",
         help="Increase output verbosity",
         action="store_true",
     )
 
+def ensemble_validation(
+    fnames: list[str],
+    ref_st: gemmi.Structure,
+    ensemble: list[gemmi.Structure],
+    verbose: bool=False,
+):
+    # Can be applied using reference model as first model in this ensemble 
+    # for self-validation or the first model in the GT ensemble for validation
+    # of pred ensemble against GT ensemble
+    # GT ensemble must be self-validated before being used to validate
+    # pred ensemble.
+    # Pred ensemble should also be self-validated
+    # Use first ensemble as reference to compare others against
+
+    # check the correct number of models are in the list
+    assert len(fnames)==len(ensemble), "# fnames ({}) and ensembles ({}) do not match!".format(
+        len(fnames),
+        len(ensemble),
+    )
+    # loop through ensemble conformations
+    for ensemble_idx, (fname, st) in enumerate(zip(fnames, ensemble)):
+        if verbose:
+            print("Validate conformation {}: {}".format(ensemble_idx, fname))
+        # compare reference and this model from the ensemble
+        for model_idx, (ref_model, model) in enumerate(zip(ref_st, st)):
+            assert ref_model.num==model.num, "Ensemble {}, model {} numbers do not match: {} vs {}".format(
+                ensemble_idx,
+                model_idx,
+                ref_model.num,
+                model.num,
+            )
+            # check all chains are the same
+            for chain_idx, (ref_chain, chain) in enumerate(zip(ref_model, model)):
+                assert ref_chain.name==chain.name, "Ensemble {}, model {}, chain {} names do not match: {} vs {}".format(
+                    ensemble_idx,
+                    model_idx,
+                    chain_idx,
+                    ref_chain.name,
+                    chain.name,
+                )
+                assert ref_chain.count_atom_sites()==chain.count_atom_sites(), "Ensemble {}, model {}, chain {} # atoms in chain {} vs {} not the same".format(
+                    ensemble_idx,
+                    model_idx,
+                    chain_idx,
+                    ref_chain.count_atom_sites(),
+                    chain.count_atom_sites(),
+                )
+                # could compare mass, but no need if comparing all atoms are the same
+                # check all residues are the same
+                for residue_idx, (ref_residue, residue) in enumerate(zip(ref_chain, chain)):
+                    assert ref_residue.name==residue.name, "Ensemble {}, model {}, chain {}, residue {} names do not match: {} vs {}".format(
+                        ensemble_idx,
+                        model_idx,
+                        chain_idx,
+                        residue_idx,
+                        ref_residue.name,
+                        residue.name,
+                    )
+                    # check all atoms are the same
+                    for atom_idx, (ref_atom, atom) in zip(ref_residue, residue):
+                        assert ref_atom.name==atom.name, "Ensemble {}, model {}, chain {}, residue {}, atom {} names do not match: {} vs {}".format(
+                            ensemble_idx,
+                            model_idx,
+                            chain_idx,
+                            residue_idx,
+                            atom_idx,
+                            ref_atom.name,
+                            atom.name,
+                        )
+                        assert ref_atom.element==atom.element, "Ensemble {}, model {}, chain {}, residue {}, atom {} elements do not match: {} vs {}".format(
+                            ensemble_idx,
+                            model_idx,
+                            chain_idx,
+                            residue_idx,
+                            atom_idx,
+                            ref_atom.element,
+                            atom.element,
+                        )
+                        # check atom serial number is identical
+                        assert ref_atom.serial==atom.serial, "Ensemble {}, model {}, chain {}, residue {}, atom {} serial numbers do not match: {} vs {}".format(
+                            ensemble_idx,
+                            model_idx,
+                            chain_idx,
+                            residue_idx,
+                            atom_idx,
+                            ref_atom.serial,
+                            atom.serial,
+                        )
+                        # check atom is not hydrogen
+                        # see https://gemmi.readthedocs.io/en/latest/mol.html
+                        assert ~atom.is_hydrogen(), "Ensemble {}, model {}, chain {}, residue {}, atom {} is hydrogen".format(
+                            ensemble_idx,
+                            model_idx,
+                            chain_idx,
+                            residue_idx,
+                            atom_idx,
+                        )
+
+def ensemble_cross_validation(reference: gemmi.Structure, ensemble: list[gemmi.Structure]):
+    pass
+
 def main(args):
-    # TODO: ADD ensemble validation tools
-    # gemmi can be used to convert PDB to MMCIF
-    # see gemmi convert: https://gemmi.readthedocs.io/en/latest/program.html
-    # TODO: potentially make any alterations required to standardise mmcif file(s) here and resave ensemble(s)
-    # can check for hydrogens with gemmi
-    # atom.is_hydrogen(): see https://gemmi.readthedocs.io/en/latest/mol.html
-    # can remove hydrogens if necessary
-    # see structure.remove_hydrogens() from same link
-    # TODO check gemmi serial numbers are the same for every atom (ie: element, residue etc etc)
-    # for both the GT ensemble and the pred ensemble relative to a single conf of the GT ensemble
-    # (which can also be used as the topology file)
-    # If gemmi serial numbers are not the same, or the molecule needs hydrogens stripping/similar,
-    # recalc the serial numbers after the edit(s) and check they are now identical to the reference.
+    # Load GT ensemble
+    gt_ensemble_files = get_ensemble(
+        args.truth_ensemble_dir,
+        file_ext=args.orig_extension,
+        verbose=args.verbose,
+    )
+    # Load predicted ensemble
+    pred_ensemble_files = get_ensemble(
+        args.pred_ensemble_dir,
+        file_ext=args.orig_extension,
+        verbose=args.verbose,
+    )
+
+    # hold ensembles in dictionary
+    gt_ensemble_stats = Ensemble_Stats(filenames=gt_ensemble_files)
+    gt_ensemble_stats.setup_conf_stats_dicts()
+    pred_ensemble_stats = Ensemble_Stats(filenames=pred_ensemble_files)
+    pred_ensemble_stats.setup_conf_stats_dicts()
+
+    # TODO: read_structure only rather than have read cif block to also access metadata
+    # st = gemmi.read_structure(path, format=gemmi.CoorFormat.Detect)
+
+    # read GT and pred ensembles into lists
+    gt_ensemble = []
+    for f in gt_ensemble_stats.filenames:
+        gt_ensemble.append(gemmi.read_structure(f))
+    pred_ensemble = []
+    for f in pred_ensemble_stats.filenames:
+        pred_ensemble.append(gemmi.read_structure(f))
+    if args.verbose:
+        print(
+            "Loaded {} GT models and {} predicted models".format(
+                len(gt_ensemble),
+                len(pred_ensemble),
+            )
+        )
+
+    print(
+        "GT ensemble self-validation using reference:\n{}\n".format(gt_ensemble_stats.filenames[0])
+    )
+    # GT self-validation
+    ensemble_validation(
+        fnames=gt_ensemble_stats.filenames,
+        ref_st=gt_ensemble[0],
+        ensemble=gt_ensemble,
+        verbose=True,
+    )
+
+    print(
+        "Pred ensemble self-validation using reference:\n{}\n".format(pred_ensemble_stats.filenames[0])
+    )
+    # Pred self-validation
+    ensemble_validation(
+        fnames=pred_ensemble_stats.filenames,
+        ref_st=pred_ensemble[0],
+        ensemble=pred_ensemble,
+        verbose=True,
+    )
+
+    print(
+        "Pred ensemble validation against GT using reference:\n{}\n".format(gt_ensemble_stats.filenames[0])
+    )
+    # Pred validation against GT ref
+    ensemble_validation(
+        fnames=pred_ensemble_stats.filenames,
+        ref_st=gt_ensemble[0],
+        ensemble=pred_ensemble,
+        verbose=True,
+    )
+
+    # TODO now use the supported mmcif validation tool to ensure that all mmcif files are valid now that they may have been modified
+    # (ie: can be pip installed via https://pypi.org/project/pdbe-mmcif-validator/ and is on github at https://github.com/PDBeurope/mmcif-validator)
     return
 
 if __name__ == "__main__":

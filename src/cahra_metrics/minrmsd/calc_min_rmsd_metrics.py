@@ -37,6 +37,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import MDAnalysis as mda
 from MDAnalysis.analysis import diffusionmap, align, rms
+from cahra_metrics.utilities.utils import get_ensemble
 
 def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Set up arguments for parsing
@@ -81,41 +82,6 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 def get_name():
     return "calc_min_rmsd_metrics"
 
-def natural_sort_key(s, _nsre=re.compile(r'(\d+)')):
-    """Sort strings alphanumberically without requiring leading zeros
-
-    Args:
-        s _type_: _description_
-        _nsre (, optional): Regular expression formulation. Defaults to re.compile(r'(\d+)').
-
-    Returns:
-        : _description_
-    """
-    return [
-        int(text) if text.isdigit() else text.lower()for text in _nsre.split(s)
-    ]
-
-def get_pdb_list(
-    conformations_dir: str,
-    file_ext: str = ".pdb",
-    verbose: bool = False,
-) -> list[str]:
-    """_summary_
-
-    Args:
-        conformations_dir (str): _description_
-        file_ext (str, optional): _description_. Defaults to ".pdb".
-        verbose (bool, optional): _description_. Defaults to False.
-
-    Returns:
-        list[str]: _description_
-    """
-    confs_path = os.path.join(conformations_dir, "*{}".format(file_ext))
-    confs = sorted(glob.glob(confs_path), key=natural_sort_key)
-    if verbose:
-        print(confs)
-    return confs
-
 def align_min_rmsd(
         pred_traj: mda.Universe,
         GT_traj: mda.Universe,
@@ -141,8 +107,8 @@ def align_min_rmsd(
             # here we are not excluding hist tag in rmsd calc or in min rmsd alignment
             rmsd_vals.append(
                 rms.rmsd(
-                    pred_traj.select_atoms("backbone").positions,
-                    GT_traj.select_atoms("backbone").positions,
+                    pred_traj.select_atoms("backbone").positions, # TODO decide on whether to use all (heavy) atoms for rmsd calculation
+                    GT_traj.select_atoms("backbone").positions, # TODO update as above
                     # ensuring QCP superposition seems to make rms.rmsd and align.alignto
                     # np.close to each other
                     superposition=True,
@@ -259,13 +225,17 @@ def main(args):
     # STEP 1 - load predicted and ground truth ensembles
     # ground truth ensemble
     # TODO check with mmcif format instead of pdb
-    gt_ensemble = get_pdb_list(args.truth_ensemble_dir, file_ext=".pdb", verbose=args.verbose)
+    gt_ensemble = get_ensemble(
+        args.truth_ensemble_dir, file_ext=".pdb", verbose=args.verbose
+    )
     if args.verbose:
         for conf in gt_ensemble:
             print(os.path.basename(conf))
 
     # pred ensemble
-    pred_ensemble = get_pdb_list(args.pred_ensemble_dir, file_ext=".pdb", verbose=args.verbose)
+    pred_ensemble = get_ensemble(
+        args.pred_ensemble_dir, file_ext=".pdb", verbose=args.verbose
+    )
     if args.verbose:
         for conf in pred_ensemble:
             print(os.path.basename(conf))
@@ -298,36 +268,43 @@ def main(args):
     # ------------------------------------------------------------------------------------
     # STEP 3 - self-align GT ensemble
     # NOTE: gt universe should already be globally aligned...
-    # ie: aligner = align.AlignTraj(u, u, select="backbone", im_memory=True).run()
-    # was applied to all 2000 conformations before subsampling for dataset creation
-    # Re-aligning may change the alignment slightly...
-    # But we realign for the GT ensemble anyway  as that is what the metrics call for
+    # ie: aligner = align.AlignTraj(u, u, select="backbone",
+    # in_memory=True).run() was applied to all 2000 conformations before
+    # subsampling for dataset creation.
+    # Re-aligning may change the alignment slightly but is done to allow
+    # calculation of RMSF metrics against a truth ensemble aligned against
+    # itself
     
     # align to reference
-    # NOTE: we currently remove hist-tag from ground-truth alignment
-    # TODO: decide whether to remove hist-tag during alignment of gt or not.
-    # TODO: do we even need the ground truth re-alignment here?
+    # NOTE: we do NOT remove hist-tag from ground-truth alignment as this
+    # may slightly affect the GT RMSF distribution
+    # It does not affect RMSDs calculated between GT and pred confs though
+    # This should not affect individual min-RMSD alignments of pred
+    # conformations to the aligned GT conformations
     # align gt_u
     aligner_gt_u = align.AlignTraj(
         gt_u,
         gt_u,
-        select='backbone and resnum 10:1014', # TODO decide on whether to exclude hist-tag in GT alignment (if this is maintained). Make consistent with optimal alignmen in pred-ensebmle below.
-        in_memory=True
+        select='backbone', # and resnum 10:1014',
     ).run()
     # NOTE: use in_memory so the alignments persist!!!!!
-    # NOTE TODO: if using mass-weighting in RMSD/RMSF calculations, must also use it to
-    # do the GT alignment (as this is via min RMSD! Hence if using mass-weighting keep this alignment
-    # AND add weight="mass" as an argument!)
-    # TODO SAVE GT mass/charge weighted aligned conformations to file (mmcif)
-    # for reuse in PCV calculation
+    
+    # NOTE: if using mass-weighting in RMSD/RMSF calculations, must also use
+    # it to do the GT alignment (as this is via min RMSD!
+    # Hence if using mass-weighting keep this alignment AND add weight="mass"
+    # as an argument!)
+    # NOTE: If using weighting, SAVE GT mass/charge weighted aligned
+    # conformations to file (mmcif) for reuse in PCV calculation
 
-    # we don't align pred_ensemble to itself. Only is aligned on a per-conf basis to GT confs
+    # NOTE: we don't align pred_ensemble to itself.
+    # It is only aligned on a per-conf basis to the (now aligned) GT confs
 
     # ------------------------------------------------------------------------------------
     # STEP 4 - min-RMSD align each conf of pred_ensemble to closest conf in GT ensemble
     # and get new min-RMSD-aligned pred_ensemble
-    # dictionary holds min-RMSD value and index of min-RMSD GT conformation for each predicted conformation
-    # TODO decide whether to use weights="mass" (weighted RMSD) during alignment
+    # dictionary holds min-RMSD value and index of min-RMSD GT conformation for each
+    # predicted conformation
+    # NOTE: not using mass weighting as RMSF calculation does not support this
     # related... TODO decide how to check hydrogens are not present in mmcif and where to do this.
     pred_u_rmsd_min_dict, pred_u_rmsd_min_aligned = align_min_rmsd(
         pred_u,
@@ -345,20 +322,23 @@ def main(args):
     SAC = np.average(np.array(pred_u_rmsd_min_dict["rmsd_min"]))
     print(SAC)
     # TODO Save pred_u_rmsd_min_dict and SAC/LFC values to file (use dict for latter?)
-    # also could save atom-wise RMSF values for aligned-pred-ensemble (AND GT ensemble, to check consistency of alignment/realignmnet if that is kept in the above code)
+    # also could save atom-wise RMSF values for aligned-pred-ensemble (AND GT ensemble,
+    # to check consistency of alignment/realignmnet if that is kept in the above code)
 
     # ------------------------------------------------------------------------------------
     # STEP 6 - calc RMSF on per-residue basis to allow calculation of LFC
-    # TODO whether+how to mass-weight this in MDAnalysis? Currently just give all atoms same
+    # NOTE: Not mass-weighting this currently. Currently just give all atoms same
     # weighting. The hydrogens should not be present in the submitted (or GT) mmcif files
-    # but ensuring this is the case is a TODO above
+    # but ensuring this is the case should be done by validate_ensembles code
     # It appears weights can be applied to an atomgroup object, ie provide rms.RMSF with
     # the argument 'weights="mass"', in similar way to RMSD calc above
-    # see: https://docs.mdanalysis.org/stable/documentation_pages/core/groups.html#MDAnalysis.core.groups.AtomGroup
+    # see: https://docs.mdanalysis.org/stable/documentation_pages/core/groups.html#
+    # MDAnalysis.core.groups.AtomGroup
     # HOWEVER, rms.RMSF reports that it does not use mass weighting...
     # see https://www.mdanalysis.org/pmda/api/rmsf.html
-    # If this is the case, then do not mass/charge weight anything unless you are sure it can be used
-    # in all atomic metrics. Do state that RMSDs are NOT MASS WEIGHTED if you do not mass-weight them
+    # If this is the case, then do not mass/charge weight anything unless you are
+    # sure it can be used in all atomic metrics. Do state that RMSDs are NOT MASS
+    # WEIGHTED if you do not mass-weight them
 
     # so here get the RMSF of our aligned GT ensemble for each atom
     rmsf_gt = rms.RMSF(gt_u.select_atoms("protein")).run()
