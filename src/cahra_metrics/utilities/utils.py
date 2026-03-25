@@ -30,6 +30,7 @@ https://opensource.org/license/mit
 import os
 import re
 import glob
+from natsort import natsorted
 
 class Ensemble_Stats(object):
     def __init__(
@@ -75,7 +76,7 @@ class Ensemble_Stats(object):
 
 def natural_sort_key(s, _nsre=re.compile(r'(\d+)')):
     """Sort strings alphanumberically without requiring leading zeros
-
+        Now replaced by natsorted # TODO: remove?
     Args:
         s _type_: _description_
         _nsre (, optional): Regular expression formulation. Defaults to re.compile(r'(\d+)').
@@ -103,7 +104,7 @@ def get_ensemble(
         list[str]: _description_
     """
     confs_path = os.path.join(conformations_dir, "*{}".format(file_ext))
-    confs = sorted(glob.glob(confs_path), key=natural_sort_key)
+    confs = natsorted(glob.glob(confs_path))
     if verbose:
         print(confs)
     return confs

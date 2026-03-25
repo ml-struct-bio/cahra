@@ -317,6 +317,11 @@ def main(args):
     # TODO SAVE mass/charge-weighted min-RMSD-aligned pred-ensemble to file for reuse 
     # in PCV (and any other future comparison to mass/charge-weighted GT-ensemble!)
 
+    # TODO: SAVE self-aligned GT as mmcifs to disk in a new directory
+    # (to be used as input for min-RMSD metric recalculation (or
+    # PCV metric calculation)???)
+    # TODO: SAVE min-RMSD-aligned pred models to disk in a new directory 
+
     # ------------------------------------------------------------------------------------
     # STEP 5 - get SAC
     SAC = np.average(np.array(pred_u_rmsd_min_dict["rmsd_min"]))

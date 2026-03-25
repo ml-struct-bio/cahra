@@ -38,6 +38,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
+from cahra_metrics.utilities.utils import get_ensemble
+
 # ensure reproducibility
 # see https://docs.pytorch.org/docs/stable/notes/randomness.html
 torch.backends.cudnn.benchmark = False
@@ -159,15 +161,28 @@ def compute_captured_variance(
         singvals_ref_subspace**2
     )
 
-def load_pdb_models(path_to_models):
-    # TODO convert to mmcif compatible
-    pdb_files = natsorted(glob.glob(os.path.join(path_to_models, "*.pdb")))
-    models = np.asarray([mdtraj.load(f).xyz[0] * 10.0 for f in pdb_files])
-    return torch.from_numpy(models)
+def load_models_as_tensor(model_filenames: list[str])->torch.Tensor:
+    """Grab each conformation from mmcif/pdb files and convert the resulting
+     list of mdtraj.Trajectory objects into a torch.Tensor holding the whole
+     ensemble
 
-# TODO convert the argparse input
-reference = mdtraj.load_pdb("0_6xou_0-200ns_115.pdb")
-topology = reference.topology
+    Args:
+        model_filenames (list[str]): list of filenames of conformations
+
+    Returns:
+        torch.Tensor: ensemble of atomic conformations, shape=(n_conformations, n_atoms, 3)
+    """
+    # NOTE: Model_filenames must already be naturally sorted! ie:
+    # use utilities.utils.get_ensemble()
+    # NOTE: Scaling of 10.0 is used because:
+    # 1. MDtraj loads file into mdtraj.Trajectory which uses nanometres as the
+    #  unit for coordinates/unit cell lengths
+    # 2. To convert to numpy array in Angstroms we multiply coords by 10
+    # and return the subsequent conversion to a torch.Tensor
+    # NOTE: [0] index is used because each mmcif/pdb has been defined to only
+    # include a single conformation
+    models = np.asarray([mdtraj.load(f).xyz[0] * 10.0 for f in model_filenames])
+    return torch.from_numpy(models)
 
 def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=False):
     # TODO sort code to make this conversion once for each (new) pred-ensemble.
@@ -177,7 +192,7 @@ def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=
 
     # TODO HERE is where to check if deterministic .xtc trajectory already exists
     # TODO If so, load that and torchify it instead of making trajectory from mmcif files
-    models = load_pdb_models(path_to_pdbs)
+    models = get_ensemble(path_to_pdbs)
     
     traj = mdtraj.Trajectory(
         models.numpy() / 10.0, topology=topology
@@ -194,22 +209,38 @@ def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=
 
 def main(args):
 
-    # STEP 1 - convert pred and truth ensembles to .xtc format
+    # STEP 1 - load the pred and truth ensembles
+    # NOTE: THESE MUST BE THE SELF-ALIGNED GT AND min-RMSD ALIGNED
+    gt_ensemble_filenames = get_ensemble(args.truth_ensemble_dir)
+    pred_ensemble_filenames = get_ensemble(args.pred_ensemble_dir)
+
+    gt_ensemble_t = load_models_as_tensor(gt_ensemble_filenames)
+    pred_ensemble_t = load_models_as_tensor(pred_ensemble_filenames)
+
+    # set up the reference (topology) model
+    # TODO convert the argparse input
+    # TODO WHY DOES THIS NOT APPLY SAME SCALING AS load_models_as_tensor???
+    reference = mdtraj.load_pdb("0_6xou_0-200ns_115.pdb")
+    topology = reference.topology
+
+    # STEP 2 - convert pred and truth ensembles to .xtc format
     # AND load xtc trajectories from file and convert to torch
     # TODO use prepare_trajectory_for_pca(), see above
+    # TODO check whether realignment is necessary (would be good just to
+    # load min-RMSD aligned pred-models)
 
     # ------------------------------------------------------------------------------------
-    # STEP 2 - compute PCA on trajectories
+    # STEP 3 - compute PCA on trajectories
 
     # ------------------------------------------------------------------------------------
-    # STEP 3 - compute the PCV
+    # STEP 4 - compute the PCV
     # TODO determine whether average is correct way to get PCV (PCV(ref to GT)+PCV(GT to ref))/2  
 
     # ------------------------------------------------------------------------------------
-    # STEP 4 - save PCV info to file (use dict format?)
+    # STEP 5 - save PCV info to file (use dict format?)
 
     # ------------------------------------------------------------------------------------
-    # STEP 5 - visualise the # TODO what and why?
+    # STEP 6 - visualise the # TODO what and why?
 
     return
 
