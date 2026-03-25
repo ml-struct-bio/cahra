@@ -70,6 +70,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         ),
         type=str,
         default="",
+        nargs="+", # load multiple ensembles to compare against each other
     )
 
     parser.add_argument(
@@ -123,6 +124,9 @@ def compute_pca(atomic_models, max_rank=50):
     # The low-rank SVD will be useful for huge sparse matrices that
     # torch.linalg.svd() cannot handle.
     return u, s, vh
+
+# TODO: Add function to create and save plot of frames projected into PCA space
+# using the right singular vectors of the ground truth PCA computation
 
 def project_frames_to_pca(atomic_models, v):
     """
@@ -185,6 +189,11 @@ def load_models_as_tensor(model_filenames: list[str])->torch.Tensor:
     return torch.from_numpy(models)
 
 def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=False):
+    # TODO COULD REMOVE THIS AND JUST USE THE load_models_as_tensor FUNCTION
+    # TO PREPARE TENSORS FOR PCV
+    # TODO: IF YOU REMOVE THIS FUNCTION, ADD .xtc WRITING OPTION TO load_models_as_tensor
+    # FUNCTION SO YOU CAN VISUALISE THE ENSEMBLES IN MD CODE (such as VMD)
+
     # TODO sort code to make this conversion once for each (new) pred-ensemble.
     # it uses prepare_trajectory_for_pca() function
     # It should do it once for the truth ensemble but then can refind it each time via
@@ -211,11 +220,16 @@ def main(args):
 
     # STEP 1 - load the pred and truth ensembles
     # NOTE: THESE MUST BE THE SELF-ALIGNED GT AND min-RMSD ALIGNED
-    gt_ensemble_filenames = get_ensemble(args.truth_ensemble_dir)
-    pred_ensemble_filenames = get_ensemble(args.pred_ensemble_dir)
+    gt_ensemble_filenames: list[str] = get_ensemble(args.truth_ensemble_dir)
+    # We have a list of predicted ensembles
+    pred_ensembles_filenames: list[list[str]] = get_ensemble(args.pred_ensemble_dir)
 
-    gt_ensemble_t = load_models_as_tensor(gt_ensemble_filenames)
-    pred_ensemble_t = load_models_as_tensor(pred_ensemble_filenames)
+    # convert GT mmcifs to tensor
+    gt_ensemble_t: torch.Tensor = load_models_as_tensor(gt_ensemble_filenames)
+    # convert pred mmcifs of each ensemble to list[torch.Tensor]
+    pred_ensembles_t: list[torch.Tensor] = [
+        load_models_as_tensor(ensemble) for ensemble in pred_ensembles_filenames
+    ]
 
     # set up the reference (topology) model
     # TODO convert the argparse input
@@ -224,6 +238,7 @@ def main(args):
     topology = reference.topology
 
     # STEP 2 - convert pred and truth ensembles to .xtc format
+    # TODO DECIDE IF THIS IS EVEN NECESSARY... I DON'T THINK IT IS!
     # AND load xtc trajectories from file and convert to torch
     # TODO use prepare_trajectory_for_pca(), see above
     # TODO check whether realignment is necessary (would be good just to
