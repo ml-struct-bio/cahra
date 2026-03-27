@@ -112,7 +112,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
 
 def get_name():
-    return "calc_min_rmsd_metrics"
+    return "calc_pcv"
 
 def compute_pca(atomic_models, max_rank=50):
     """

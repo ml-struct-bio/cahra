@@ -33,11 +33,11 @@ dependencies = [
     "tabulate",
     "torch",
     "mdtraj",
-    "lxml_html_clean",
+    "lxml_html_clean"
 ]
 
 [project.scripts]
-CAHRA-metrics = "cahra-metrics.cli:main"
+cahra-metrics = "cahra_metrics.cli:main"
 
 [project.urls]
 "Homepage" = "https://github.com/JatGreer/CAHRA-metrics"

@@ -184,6 +184,9 @@ def ensemble_validation(
 def ensemble_cross_validation(reference: gemmi.Structure, ensemble: list[gemmi.Structure]):
     pass
 
+def get_name():
+    return "validate_ensembles"
+
 def main(args):
     # Load GT ensemble
     gt_ensemble_files = get_ensemble(

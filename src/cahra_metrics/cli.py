@@ -31,8 +31,8 @@ import argparse
 import pkg_resources
 from pathlib import Path
 
-import cahra_metrics.convert_ensemble
-import cahra_metrics.validate_ensemble
+import cahra_metrics.validate_ens.convert_ensemble
+import cahra_metrics.validate_ens.validate_ensembles
 import cahra_metrics.minrmsd.calc_min_rmsd_metrics
 import cahra_metrics.pcv.calc_pcv
 
