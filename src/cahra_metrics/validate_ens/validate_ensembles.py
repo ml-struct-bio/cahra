@@ -198,21 +198,15 @@ def main(args):
         verbose=args.verbose,
     )
 
-    # hold ensembles in dictionary
-    gt_ensemble_stats = Ensemble_Stats(filenames=gt_ensemble_files)
-    gt_ensemble_stats.setup_conf_stats_dicts()
-    pred_ensemble_stats = Ensemble_Stats(filenames=pred_ensemble_files)
-    pred_ensemble_stats.setup_conf_stats_dicts()
-
     # TODO: read_structure only rather than have read cif block to also access metadata
     # st = gemmi.read_structure(path, format=gemmi.CoorFormat.Detect)
 
     # read GT and pred ensembles into lists
     gt_ensemble = []
-    for f in gt_ensemble_stats.filenames:
+    for f in gt_ensemble_files:
         gt_ensemble.append(gemmi.read_structure(f))
     pred_ensemble = []
-    for f in pred_ensemble_stats.filenames:
+    for f in pred_ensemble_files:
         pred_ensemble.append(gemmi.read_structure(f))
     if args.verbose:
         print(
@@ -223,39 +217,40 @@ def main(args):
         )
 
     print(
-        "GT ensemble self-validation using reference:\n{}\n".format(gt_ensemble_stats.filenames[0])
+        "GT ensemble self-validation using reference:\n{}\n".format(gt_ensemble_files[0])
     )
     # GT self-validation
     ensemble_validation(
-        fnames=gt_ensemble_stats.filenames,
+        fnames=gt_ensemble_files,
         ref_st=gt_ensemble[0],
         ensemble=gt_ensemble,
         verbose=True,
     )
 
     print(
-        "Pred ensemble self-validation using reference:\n{}\n".format(pred_ensemble_stats.filenames[0])
+        "Pred ensemble self-validation using reference:\n{}\n".format(pred_ensemble_files[0])
     )
     # Pred self-validation
     ensemble_validation(
-        fnames=pred_ensemble_stats.filenames,
+        fnames=pred_ensemble_files,
         ref_st=pred_ensemble[0],
         ensemble=pred_ensemble,
         verbose=True,
     )
 
     print(
-        "Pred ensemble validation against GT using reference:\n{}\n".format(gt_ensemble_stats.filenames[0])
+        "Pred ensemble validation against GT using reference:\n{}\n".format(gt_ensemble_files[0])
     )
     # Pred validation against GT ref
     ensemble_validation(
-        fnames=pred_ensemble_stats.filenames,
+        fnames=pred_ensemble_files,
         ref_st=gt_ensemble[0],
         ensemble=pred_ensemble,
         verbose=True,
     )
 
-    # TODO now use the supported mmcif validation tool to ensure that all mmcif files are valid now that they may have been modified
+    # TODO Could also use the supported mmcif validation tool to ensure that all mmcif files.
+    # Would be useful if validate_ensembles modifies mmcif file, but it currently doesn't
     # (ie: can be pip installed via https://pypi.org/project/pdbe-mmcif-validator/ and is on github at https://github.com/PDBeurope/mmcif-validator)
     return
 

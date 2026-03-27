@@ -32,13 +32,15 @@ import argparse
 import torch
 import mdtraj
 import os
+import json
 import glob
 from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+from tabulate import tabulate
 
-from cahra_metrics.utilities.utils import get_ensemble
+from cahra_metrics.utilities.utils import get_ensemble, save_dict_to_json
 
 # ensure reproducibility
 # see https://docs.pytorch.org/docs/stable/notes/randomness.html
@@ -69,8 +71,18 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
             " submitted ensemble."
         ),
         type=str,
-        default="",
         nargs="+", # load multiple ensembles to compare against each other
+    )
+
+    parser.add_argument(
+        "--pred_ensemble_label",
+        "-pl",
+        help=(
+            "Label for predicted ensemble. Used to set output directories."
+            " Use one value per predicted ensemble directory."
+        ),
+        type=str,
+        nargs="+", # one for each pred ensemble
     )
 
     parser.add_argument(
@@ -82,6 +94,14 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         ),
         type=str,
         default="/media/jg/My Book/JGreer/dinaMISMO/dinaMISMO-systems-prep/PreP/pilot_studies/ConformationSampling/extract_frames_6xou_unsteered_0-200ns/extract_frames_6xou_unsteered_0-200ns",
+    )
+
+    parser.add_argument(
+        "--max_rank",
+        "-r",
+        help="Max rank to use in pca cpmputation",
+        type=int,
+        default=10,
     )
 
     parser.add_argument(
@@ -188,6 +208,7 @@ def load_models_as_tensor(model_filenames: list[str])->torch.Tensor:
     models = np.asarray([mdtraj.load(f).xyz[0] * 10.0 for f in model_filenames])
     return torch.from_numpy(models)
 
+"""
 def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=False):
     # TODO COULD REMOVE THIS AND JUST USE THE load_models_as_tensor FUNCTION
     # TO PREPARE TENSORS FOR PCV
@@ -214,12 +235,26 @@ def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=
     if verbose:
         print("{} has shape {}".format(os.path.basename(filename_prefix), models_as_numpy.shape))
     return models_as_numpy
-
-
+"""
+    
 def main(args):
+    # check each pred ensemble has a label
+    assert len(
+        args.pred_ensemble_dir
+    )==len(
+        args.pred_ensemble_label
+    ), "Supply same number of predicted ensemble directories ({}) and labels ({})".format(
+        len(args.pred_ensemble_dir),
+        len(args.pred_ensemble_label),
+    )
+
 
     # STEP 1 - load the pred and truth ensembles
     # NOTE: THESE MUST BE THE SELF-ALIGNED GT AND min-RMSD ALIGNED
+    # NOTE: Already saved xtc in calc_min_rmsd_metrics, no need to do it
+    # again here
+    # NOTE: cahra-metrics calc_min_rmsd_metrics only wrote pdbs instead of
+    # mmcifs. Just load the pdbs and use those here
     gt_ensemble_filenames: list[str] = get_ensemble(args.truth_ensemble_dir)
     # We have a list of predicted ensembles
     pred_ensembles_filenames: list[list[str]] = get_ensemble(args.pred_ensemble_dir)
@@ -231,32 +266,161 @@ def main(args):
         load_models_as_tensor(ensemble) for ensemble in pred_ensembles_filenames
     ]
 
-    # set up the reference (topology) model
-    # TODO convert the argparse input
-    # TODO WHY DOES THIS NOT APPLY SAME SCALING AS load_models_as_tensor???
-    reference = mdtraj.load_pdb("0_6xou_0-200ns_115.pdb")
-    topology = reference.topology
-
-    # STEP 2 - convert pred and truth ensembles to .xtc format
-    # TODO DECIDE IF THIS IS EVEN NECESSARY... I DON'T THINK IT IS!
-    # AND load xtc trajectories from file and convert to torch
-    # TODO use prepare_trajectory_for_pca(), see above
-    # TODO check whether realignment is necessary (would be good just to
-    # load min-RMSD aligned pred-models)
+    if args.verbose:
+        print("gt_ensemble shape: {}".format(gt_ensemble_t.shape))
+        for (label, ensemble) in zip(args.pred_ensemble_label, pred_ensembles_t):
+            print("pred_ensemble {} shape: {}\n".format(label, ensemble.shape))
+    
+    # NOTE: As long as we are using min-RMSD aligned pred_ensemble mmcif/pdb
+    # directories as inputs to args.pred_ensemble_dir we don't need to align
+    # against a reference
+    # This could otherwise be done with:
+    """
+    topology = mdtraj.load_pdb(gt_ensemble_filenames[0]).topology
+    pred_ensembles_realigned = [
+        gt.superpose(
+            mdtraj.Trajectory(
+                pred_ensemble.numpy() / 10.0,
+                topology=topology,
+            )
+        ) for pred_ensemble in pred_ensembles_t
+    ]
+    pred_ensembles_t = [
+        torch.from_numpy(
+            np.asarray(
+                pred_ensemble.xyz * 10.0 for pred_ensemble in pred_ensembles_realigned
+            )
+        )
+    ]
+    """
 
     # ------------------------------------------------------------------------------------
-    # STEP 3 - compute PCA on trajectories
+    # STEP 3 - compute PCA on trajectories and compute the PCV
+    u_gt, s_gt, vh_gt = compute_pca(gt_ensemble_t, max_rank=args.max_rank)
+    
+    u_pred = []
+    s_pred = []
+    vh_pred = []
+    pcv_pred = []
+
+    for (label, ensemble) in zip(args.pred_ensemble_label, pred_ensembles_t):
+        if args.verbose:
+            print("Computing captured variance for {}".format(label))
+        u, s, vh = compute_pca(ensemble, max_rank=args.max_rank)
+
+        # NOTE: We are calculating PCV relative to GT ensemble (rather than
+        # (PCV(ref to GT)+PCV(GT to ref))/2  
+        pcv = compute_captured_variance(vh, vh_gt, s_gt)
+
+        u_pred.append(u)
+        s_pred.append(s)
+        vh_pred.append(vh)
+        pcv_pred.append(pcv)
 
     # ------------------------------------------------------------------------------------
-    # STEP 4 - compute the PCV
-    # TODO determine whether average is correct way to get PCV (PCV(ref to GT)+PCV(GT to ref))/2  
+    # STEP 4 - save PCV info to file (use dict format?)
+    # TODO: tidy this up to have set filenames in class
+    for (label, pred_ensemble_dir, pcv) in zip(args.pred_ensemble_label, args.pred_ensemble_dir, pcv_pred):
+        if args.verbose:
+            print("Adding PCV to json for {}".format(label))
+        json_file=os.path.join(
+            os.path.dirname(os.path.dirname(pred_ensemble_dir)),
+            "results",
+            "rms_metrics.json",
+        )
+        # in this case results variable is a dict rather than a class
+        results = json.load(json_file)
+        results["ensemble"]["ensemble_stats"]["pcv"]=pcv
+        # save dict to json with updated name
+        updated_json_file = os.path.join(
+            os.path.dirname(json_file),
+            "all_metrics.json",
+        )
+        save_dict_to_json(results, updated_json_file)
 
     # ------------------------------------------------------------------------------------
-    # STEP 5 - save PCV info to file (use dict format?)
+    # STEP 5 - visualise the # TODO what and why?
 
-    # ------------------------------------------------------------------------------------
-    # STEP 6 - visualise the # TODO what and why?
 
+    # STEP 6 - for now print out the summary statistics at end of this script
+    # TODO: make standalone script to make pd.DataFrame/csv from the jsons
+    table = [
+        ["label", "sac", "lfc", "pcv", "sac_rank", "pcv_rank", "lfc_rank", "summed_score", "relative_ranking"]
+    ]
+    lines = []
+    for (label, pred_ensemble_dir) in zip(args.pred_ensemble_label, args.pred_ensemble_dir):
+        json_file=os.path.join(
+            os.path.dirname(os.path.dirname(pred_ensemble_dir)),
+            "results",
+            "all_metrics.json",
+        )
+        results = json.load(json_file)
+        line = [
+            label,
+            results["ensemble"]["ensemble_stats"]["sac"],
+            results["ensemble"]["ensemble_stats"]["lfc"],
+            results["ensemble"]["ensemble_stats"]["pcv"],
+        ]
+        lines.append(line)
+    
+    # now we have each line, find the rank for each metric
+    # NOTE: low is good for SAC and LFC
+    # high is good for PCV
+    sacs = np.asarray([item[1] for item in lines])
+    lfcs = np.asarray([item[2] for item in lines])
+    pcvs = np.asarray([item[3] for item in lines])
+
+    sac_ranks = np.argsort(
+        np.argsort(sacs)
+    )
+    lfc_ranks = np.argsort(
+        np.argsort(lfcs)
+    )
+    # higher value is better so flip the index ordering to be negative before 2nd argsort
+    pcv_ranks = np.argsort(
+        np.argsort(pcvs)*(-1)
+    )
+
+    # low is good, high bad 
+    summed_scores = sac_ranks+lfc_ranks+pcv_ranks
+
+    # NOTE: low is good, but beware of summed_scores which are identical!
+    # Any identical summed scores will not have the same relative_rank
+    relative_ranks = np.argsort(
+        np.argsort(summed_scores)
+    )
+
+    for (
+        line,
+        sac_rank,
+        lfc_rank,
+        pcv_rank,
+        summed_score,
+        relative_rank
+    ) in zip(
+        lines,
+        sac_ranks.tolist(),
+        lfc_ranks.tolist(),
+        pcv_ranks.tolist(),
+        summed_scores.tolist(),
+        relative_ranks.tolist()
+    ):
+        line.append(sac_rank)
+        line.append(lfc_rank)
+        line.append(pcv_rank)
+        line.append(summed_score)
+        line.append(relative_rank)
+
+        table.append(line)
+
+    # print the formatted table
+    print(
+        tabulate(
+            table,
+            headers="firstrow",
+            tablefmt="fancy_grid",
+        )
+    )
     return
 
 if __name__ == "__main__":

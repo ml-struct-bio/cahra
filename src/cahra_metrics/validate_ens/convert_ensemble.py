@@ -32,7 +32,7 @@ import gemmi
 import os
 import subprocess
 
-from cahra_metrics.utilities.utils import get_ensemble
+from cahra_metrics.utilities.utils import get_ensemble, replace_file_ext
 
 def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Set up arguments for parsing
@@ -95,26 +95,6 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 def get_name():
     return "convert_ensemble"
-
-def replace_file_ext(fname: str, new_ext: str, new_dir: str, verbose: bool=False)->str:
-    # find original extension
-    dir_path, base_name = os.path.split(fname)
-    orig_basename, orig_ext = os.path.splitext(base_name)
-    # check new extension is different to original extension
-    assert orig_ext != new_ext, (
-        "New file extension ({}) is same as original ({})!".format(
-            new_ext,
-            orig_ext
-        )
-    )
-    # replace extension
-    new_fname = os.path.join(
-        new_dir,
-        ".".join(orig_basename, new_ext),
-    )
-    if verbose:
-        print("Will convert {} to {}".format(fname, new_fname))
-    return new_fname
 
 # gemmi can be used to convert between PDB, MMCIF and MMJSON
 # see gemmi convert: https://gemmi.readthedocs.io/en/latest/program.html
