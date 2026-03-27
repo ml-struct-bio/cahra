@@ -238,6 +238,9 @@ def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=
 """
     
 def main(args):
+    # check for CUDA
+    if args.verbose:
+        print("CUDA available: {}".format(torch.cuda.is_available()))
     # check each pred ensemble has a label
     assert len(
         args.pred_ensemble_dir
