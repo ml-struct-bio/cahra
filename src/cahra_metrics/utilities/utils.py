@@ -77,8 +77,9 @@ class Ensemble_Stats(object):
         self.pred_confs_dir_label_xtc = os.path.join(self.pred_confs_dir_label, "xtc")
         self.pred_confs_dir_label_figures = os.path.join(self.pred_confs_dir_label, "figures")
         self.pred_confs_dir_label_results = os.path.join(self.pred_confs_dir_label, "results")
-    
-    @classmethod
+
+        print(self.__dict__)
+
     def make_results_dir_structure(self):
         # top level
         make_dir(self.output_dir, verbose=self.verbose)
@@ -160,7 +161,8 @@ def make_dir(directory: str, verbose: bool=False):
             print("Making {} results directory".format(directory))
 
 def save_dict_to_json(dictionary: dict, json_file: str, indent: int=4):
-    json.dump(dictionary, json_file, indent=indent)
+    with open(json_file, "w") as f:
+        json.dump(dictionary, f, indent=indent)
     
 # def load_dict_from_json(json_file: str):
 #     return json.load(json_file)

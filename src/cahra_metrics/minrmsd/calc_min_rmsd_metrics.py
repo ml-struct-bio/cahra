@@ -155,9 +155,10 @@ def align_min_rmsd(
         min_index = np.argmin(rmsd_vals)
         # TODO: decide whether to also store pairwise min-rmsds to dictionary. May be useful for later analyses
         # when rmsd_min dict is saved to file?
-        rmsd_min["pred_index"].append(i)
-        rmsd_min["rmsd_min"].append(rmsd_vals[min_index])
-        rmsd_min["gt_index"].append(min_index)
+        # casting to int/float as numpy dtypes not save-able as json
+        rmsd_min["pred_index"].append(int(i))
+        rmsd_min["rmsd_min"].append(float(rmsd_vals[min_index]))
+        rmsd_min["gt_index"].append(int(min_index))
     
     # now that we have the indices of the best rmsd fit for each pred_traj
     # we now align them in the copied pred_traj
@@ -232,11 +233,11 @@ def make_over_under_represent_het_plot(
         rmsf_gt,
         rmsf_pred,
         plot_dir: str,
+        avg_over: int=100,
 ):
     # +ve value of diff means heterogeneity under-estimated
     # -ve value of diff means heterogeneity over-estimated
     diff = rmsf_gt-rmsf_pred
-    avg_over = 100 # 100 atoms TODO make configurable
     avgs = []
     for i, atom in enumerate(range(len(diff))):
         if i<avg_over:
@@ -246,7 +247,7 @@ def make_over_under_represent_het_plot(
         
     avgs = np.array(avgs)
     plt.plot(range(len(diff)), diff, color="red", label="GT-pred")
-    plt.plot(range(len(diff))[avg_over:], avgs, color="black", label="100-atom-avg")
+    plt.plot(range(len(diff))[round(avg_over/2.):len(diff)-round(avg_over/2.)], avgs, color="black", label="100-atom-avg")
     plt.xlabel('Atom number')
     plt.ylabel('RMSF ($\AA$)')
     plt.axvspan(79, 2175, zorder=0, alpha=0.2, color='orange', label='D1')
@@ -286,7 +287,7 @@ def main(args):
     )
 
     pred_u = mda.Universe(
-        pred_ensemble[0], # topology TODO: decide whether to use gt_ensemble[0] instead for topology
+        gt_ensemble[0], # pred_ensemble[0], # topology TODO: decide whether to use gt_ensemble[0] instead for topology
         pred_ensemble,
         in_memory=True,
     )
@@ -294,7 +295,7 @@ def main(args):
     # make a copy of pred_u which we later fill with the conformations once they are
     # optimally aligned to ground truth ensemble
     pred_u_copy = mda.Universe(
-        pred_ensemble[0], # topology TODO: decide whether to use gt_ensemble[0] instead for topology
+        gt_ensemble[0], # pred_ensemble[0], # topology TODO: decide whether to use gt_ensemble[0] instead for topology
         pred_ensemble,
         in_memory=True,
     )
@@ -387,14 +388,15 @@ def main(args):
             "pdb",
             results.gt_confs_dir_pdbs,
             args.verbose,
-        ),
-        # write pdbs in output directory
-        fname = os.path.join(results.gt_confs_dir_pdbs, new_ensemble_filename)
-        gt_ensemble_filenames.append(fname)
-        gt_u.write(
-            fname,
-            overwrite=args.write_gt,
         )
+        # write pdbs in output directory
+        gt_ensemble_filenames.append(new_ensemble_filename)
+        if not os.path.isfile(new_ensemble_filename) or args.write_gt:
+            print("Writing out self-aligned GT models")
+            gt_u.atoms.write(
+                new_ensemble_filename,
+                # overwrite=args.write_gt,
+            )
     # no way to write mmcifs from mda.Universe. Could use conversion tool from pdb
 
     # NOTE: SAVE min-RMSD-aligned pred models to disk in a new directory 
@@ -414,13 +416,12 @@ def main(args):
             "pdb",
             results.pred_confs_dir_label_pdbs,
             args.verbose,
-        ),
+        )
         # write pdbs in output directory
-        fname = os.path.join(results.pred_confs_dir_label_pdbs, new_ensemble_filename)
-        pred_ensemble_filenames.append(fname)
-        pred_u_rmsd_min_aligned.write(
-            fname,
-            overwrite=True,
+        pred_ensemble_filenames.append(new_ensemble_filename)
+        pred_u_rmsd_min_aligned.atoms.write(
+            new_ensemble_filename,
+            # overwrite=True,
         )
     # no way to write mmcifs from mda.Universe. Could use conversion tool from pdb
 
@@ -439,7 +440,7 @@ def main(args):
     # STEP 6 - get SAC
     SAC = np.average(np.array(pred_u_rmsd_min_dict["rmsd_min"]))
     results.ensemble["ensemble_stats"]["sac"]=SAC
-    print(SAC)
+    print("SAC: {}".format(SAC))
     # TODO Save pred_u_rmsd_min_dict and SAC/LFC values to file (use dict for latter?)
     # also could save atom-wise RMSF values for aligned-pred-ensemble (AND GT ensemble,
     # to check consistency of alignment/realignmnet if that is kept in the above code)

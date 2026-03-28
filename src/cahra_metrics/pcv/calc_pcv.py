@@ -260,7 +260,9 @@ def main(args):
     # mmcifs. Just load the pdbs and use those here
     gt_ensemble_filenames: list[str] = get_ensemble(args.truth_ensemble_dir)
     # We have a list of predicted ensembles
-    pred_ensembles_filenames: list[list[str]] = get_ensemble(args.pred_ensemble_dir)
+    pred_ensembles_filenames: list[list[str]] = [
+        get_ensemble(pred_ensemble) for pred_ensemble in args.pred_ensemble_dir
+    ]
 
     # convert GT mmcifs to tensor
     gt_ensemble_t: torch.Tensor = load_models_as_tensor(gt_ensemble_filenames)
@@ -312,8 +314,9 @@ def main(args):
         u, s, vh = compute_pca(ensemble, max_rank=args.max_rank)
 
         # NOTE: We are calculating PCV relative to GT ensemble (rather than
-        # (PCV(ref to GT)+PCV(GT to ref))/2  
-        pcv = compute_captured_variance(vh, vh_gt, s_gt)
+        # (PCV(ref to GT)+PCV(GT to ref))/2
+        # convert to float to store in json
+        pcv = float(compute_captured_variance(vh, vh_gt, s_gt))
 
         u_pred.append(u)
         s_pred.append(s)
@@ -323,6 +326,8 @@ def main(args):
     # ------------------------------------------------------------------------------------
     # STEP 4 - save PCV info to file (use dict format?)
     # TODO: tidy this up to have set filenames in class
+    # Also, set pred_confs dir from any of the loaded jsons
+    pred_confs_dir = ""
     for (label, pred_ensemble_dir, pcv) in zip(args.pred_ensemble_label, args.pred_ensemble_dir, pcv_pred):
         # print of PCV for each pred ensemble
         print(
@@ -333,18 +338,23 @@ def main(args):
             print("Adding PCV to json for {}".format(label))
         json_file=os.path.join(
             os.path.dirname(os.path.dirname(pred_ensemble_dir)),
+            label,
             "results",
             "rms_metrics.json",
         )
         # in this case results variable is a dict rather than a class
-        results = json.load(json_file)
-        results["ensemble"]["ensemble_stats"]["pcv"]=pcv
-        # save dict to json with updated name
-        updated_json_file = os.path.join(
-            os.path.dirname(json_file),
-            "all_metrics.json",
-        )
-        save_dict_to_json(results, updated_json_file)
+        with open(json_file, "r") as f:
+            results=json.load(f)
+            results["ensemble"]["ensemble_stats"]["pcv"]=pcv
+            # save dict to json with updated name
+            updated_json_file = os.path.join(
+                os.path.dirname(json_file),
+                "all_metrics.json",
+            )
+            save_dict_to_json(results, updated_json_file)
+            # also set dir for collective plots
+            if not pred_confs_dir:
+                pred_confs_dir=results["pred_confs_dir"]
 
     # ------------------------------------------------------------------------------------
     # STEP 5 - visualise the projection onto GT and ...
@@ -355,9 +365,9 @@ def main(args):
     plt.yscale("log")
     plt.xlabel("Principal Component")
     plt.legend()
-    print("Writing plots to {}".format(results.pred_confs_dir)) # re-using from last loaded json
-    plt.savefig(os.path.join(results.pred_confs_dir, "s_plot.png"), dpi=300)
-    plt.savefig(os.path.join(results.pred_confs_dir, "s_plot.pdf"))
+    print("Writing plots to {}".format(pred_confs_dir)) # re-using from last loaded json
+    plt.savefig(os.path.join(pred_confs_dir, "s_plot.png"), dpi=300)
+    plt.savefig(os.path.join(pred_confs_dir, "s_plot.pdf"))
     plt.clf()
 
     # plot_s_viz_normalised
@@ -369,9 +379,9 @@ def main(args):
     plt.yscale("log")
     plt.xlabel("Principal Component")
     plt.legend()
-    print("Writing plots to {}".format(results.pred_confs_dir)) # re-using from last loaded json
-    plt.savefig(os.path.join(results.pred_confs_dir, "s_plot_norm.png"), dpi=300)
-    plt.savefig(os.path.join(results.pred_confs_dir, "s_plot_norm.pdf"))
+    print("Writing plots to {}".format(pred_confs_dir)) # re-using from last loaded json
+    plt.savefig(os.path.join(pred_confs_dir, "s_plot_norm.png"), dpi=300)
+    plt.savefig(os.path.join(pred_confs_dir, "s_plot_norm.pdf"))
     plt.clf()
 
     # plot_projection_onto_GT
@@ -402,8 +412,8 @@ def main(args):
         )
         ax[0,idx+1].set_title("PCA of {} models".format(label))
         fig.colorbar(sc, ax=ax[0, idx+1], label="Frame index")
-    plt.savefig(os.path.join(results.pred_confs_dir, "pcv_projection.png"), dpi=300)
-    plt.savefig(os.path.join(results.pred_confs_dir, "pcv_projection.pdf"))
+    plt.savefig(os.path.join(pred_confs_dir, "pcv_projection.png"), dpi=300)
+    plt.savefig(os.path.join(pred_confs_dir, "pcv_projection.pdf"))
     plt.clf()
 
     # STEP 6 - for now print out the summary statistics at end of this script
@@ -415,17 +425,19 @@ def main(args):
     for (label, pred_ensemble_dir) in zip(args.pred_ensemble_label, args.pred_ensemble_dir):
         json_file=os.path.join(
             os.path.dirname(os.path.dirname(pred_ensemble_dir)),
+            label,
             "results",
             "all_metrics.json",
         )
-        results = json.load(json_file)
-        line = [
-            label,
-            results["ensemble"]["ensemble_stats"]["sac"],
-            results["ensemble"]["ensemble_stats"]["lfc"],
-            results["ensemble"]["ensemble_stats"]["pcv"],
-        ]
-        lines.append(line)
+        with open(json_file, "r") as f:
+            results=json.load(f)
+            line = [
+                label,
+                results["ensemble"]["ensemble_stats"]["sac"],
+                results["ensemble"]["ensemble_stats"]["lfc"],
+                results["ensemble"]["ensemble_stats"]["pcv"],
+            ]
+            lines.append(line)
     
     # now we have each line, find the rank for each metric
     # NOTE: low is good for SAC and LFC
