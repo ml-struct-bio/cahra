@@ -214,22 +214,24 @@ def calc_lfc(rmsf_gt, rmsf_pred):
     )
     return lfc, lfc_stddev, abs_diff_rmsf
 
-def make_plot_lfc(ad_rmsf):
+def make_plot_lfc(ad_rmsf, plot_dir: str):
     # TODO add docstring with info about non-H atom indices
     plt.plot(range(len(ad_rmsf)), ad_rmsf, color="blue", label="|$\Delta$RMSF|")
     plt.xlabel('Atom index')
     plt.ylabel('RMSF ($\AA$)')
-    plt.axvspan(142, 4239, zorder=0, alpha=0.2, color='orange', label='D1')
-    plt.axvspan(8565, 8603, zorder=0, alpha=0.2, color='blue', label='LNK')
-    plt.axvspan(13183, 16025, zorder=0, alpha=0.2, color='green', label='D4')
+    plt.axvspan(79, 2175, zorder=0, alpha=0.2, color='orange', label='D1')
+    plt.axvspan(4346, 4366, zorder=0, alpha=0.2, color='blue', label='LNK')
+    plt.axvspan(6465, 8085, zorder=0, alpha=0.2, color='green', label='D4')
     plt.legend()
-    plt.plot()
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsf.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsf.pdf"))
     plt.clf()
-    # TODO convert this to save instead of show plot 
 
 def make_over_under_represent_het_plot(
-        rmsf_gt, rmsf_pred
+        rmsf_gt,
+        rmsf_pred,
+        plot_dir: str,
 ):
     # +ve value of diff means heterogeneity under-estimated
     # -ve value of diff means heterogeneity over-estimated
@@ -244,23 +246,22 @@ def make_over_under_represent_het_plot(
         
     avgs = np.array(avgs)
     plt.plot(range(len(diff)), diff, color="red", label="GT-pred")
-    plt.plot(range(len(diff))[100:], avgs, color="black", label="100-atom-avg")
+    plt.plot(range(len(diff))[avg_over:], avgs, color="black", label="100-atom-avg")
     plt.xlabel('Atom number')
     plt.ylabel('RMSF ($\AA$)')
-    plt.axvspan(142, 4239, zorder=0, alpha=0.2, color='orange', label='D1')
-    plt.axvspan(8565, 8603, zorder=0, alpha=0.2, color='blue', label='LNK')
-    plt.axvspan(13183, 16025, zorder=0, alpha=0.2, color='green', label='D4')
+    plt.axvspan(79, 2175, zorder=0, alpha=0.2, color='orange', label='D1')
+    plt.axvspan(4346, 4366, zorder=0, alpha=0.2, color='blue', label='LNK')
+    plt.axvspan(6465, 8085, zorder=0, alpha=0.2, color='green', label='D4')
     plt.legend()
-    plt.plot()
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsf_diff.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsf_diff.pdf"))
     plt.clf()
-    # TODO convert this to save instead of show plot 
 
 def main(args):
     
     # STEP 1 - load predicted and ground truth ensembles
     # ground truth ensemble
-    # TODO check with mmcif format instead of pdb
     gt_ensemble = get_ensemble(
         args.truth_ensemble_dir, file_ext=args.extension, verbose=args.verbose
     )
@@ -490,11 +491,14 @@ def main(args):
             "rms_metrics.json"
         )
     )
-
-    make_plot_lfc(abs_diff_rmsf)
+    make_plot_lfc(
+        abs_diff_rmsf,
+        results.pred_confs_dir_label_figures,
+    )
     make_over_under_represent_het_plot(
         rmsf_gt.results.rmsf,
-        rmsf_pred.results.rmsf
+        rmsf_pred.results.rmsf,
+        results.pred_confs_dir_label_figures,
     )
     # TODO improve error bar plotting style
 

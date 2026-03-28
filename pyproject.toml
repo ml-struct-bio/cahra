@@ -33,7 +33,8 @@ dependencies = [
     "tabulate",
     "torch",
     "mdtraj",
-    "lxml_html_clean"
+    "lxml_html_clean",
+    "gemmi-program"
 ]
 
 [project.scripts]

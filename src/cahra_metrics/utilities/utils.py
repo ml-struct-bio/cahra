@@ -147,7 +147,7 @@ def replace_file_ext(fname: str, new_ext: str, new_dir: str, verbose: bool=False
     # replace extension
     new_fname = os.path.join(
         new_dir,
-        ".".join(orig_basename, new_ext),
+        ".".join([orig_basename, new_ext]),
     )
     if verbose:
         print("Will convert {} to {}".format(fname, new_fname))

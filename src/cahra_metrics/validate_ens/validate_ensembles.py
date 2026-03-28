@@ -67,13 +67,23 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--extension",
+        "--orig_extension",
         "-e",
         help=(
             "File type (extension) to convert to "
         ),
         choices=["cif", "pdb", "json"],
         default="cif"
+    )
+
+    parser.add_argument(
+        "--copy_from_ref",
+        "-r",
+        help=(
+            "For insignificant differences, copy values from reference file and overwrite"
+            " predicted conformation file. For example, can update a C to a CB atom label."
+        ),
+        action="store_true",
     )
 
     parser.add_argument(
@@ -97,11 +107,14 @@ def ensemble_validation(
     # Pred ensemble should also be self-validated
     # Use first ensemble as reference to compare others against
 
+    # returns the pred_conf with (if any are made) the updates
+
     # check the correct number of models are in the list
     assert len(fnames)==len(ensemble), "# fnames ({}) and ensembles ({}) do not match!".format(
         len(fnames),
         len(ensemble),
     )
+    ensemble_updates=[]
     # loop through ensemble conformations
     for ensemble_idx, (fname, st) in enumerate(zip(fnames, ensemble)):
         if verbose:
@@ -142,26 +155,50 @@ def ensemble_validation(
                         residue.name,
                     )
                     # check all atoms are the same
-                    for atom_idx, (ref_atom, atom) in zip(ref_residue, residue):
-                        assert ref_atom.name==atom.name, "Ensemble {}, model {}, chain {}, residue {}, atom {} names do not match: {} vs {}".format(
+                    for atom_idx, (ref_atom, atom) in enumerate(zip(ref_residue, residue)):
+                        # as atoms in a residue don't have a defined order in a cif file
+                        # we instead need to check that all atoms in both
+                        # are present in the other
+                        # Currently not counting # times each is present
+                        
+                        # check pred_atoms in reference residue
+                        assert atom.name in [residue_atom.name for residue_atom in ref_residue], "Ensemble {}, model {}, chain {}, residue {}, atom {} name {} not present in reference!".format(
+                            ensemble_idx,
+                            model_idx,
+                            chain_idx,
+                            residue_idx,
+                            atom_idx,
+                            atom.name,
+                        )
+                        assert ref_atom.element in [residue_atom.element for residue_atom in ref_residue], "Ensemble {}, model {}, chain {}, residue {}, atom {} element {} not present in reference!".format(
+                            ensemble_idx,
+                            model_idx,
+                            chain_idx,
+                            residue_idx,
+                            atom_idx,
+                            atom.element,
+                        )
+
+                        # check ref_atoms in pred residue
+                        assert ref_atom.name in [residue_atom.name for residue_atom in residue], "Ensemble {}, model {}, chain {}, residue {}, atom {} name not present in predicted!".format(
                             ensemble_idx,
                             model_idx,
                             chain_idx,
                             residue_idx,
                             atom_idx,
                             ref_atom.name,
-                            atom.name,
                         )
-                        assert ref_atom.element==atom.element, "Ensemble {}, model {}, chain {}, residue {}, atom {} elements do not match: {} vs {}".format(
+                        assert ref_atom.element in [residue_atom.element for residue_atom in residue], "Ensemble {}, model {}, chain {}, residue {}, atom {} element {} not present in predicted!".format(
                             ensemble_idx,
                             model_idx,
                             chain_idx,
                             residue_idx,
                             atom_idx,
                             ref_atom.element,
-                            atom.element,
                         )
+                        
                         # check atom serial number is identical
+                        """
                         assert ref_atom.serial==atom.serial, "Ensemble {}, model {}, chain {}, residue {}, atom {} serial numbers do not match: {} vs {}".format(
                             ensemble_idx,
                             model_idx,
@@ -171,6 +208,7 @@ def ensemble_validation(
                             ref_atom.serial,
                             atom.serial,
                         )
+                        """
                         # check atom is not hydrogen
                         # see https://gemmi.readthedocs.io/en/latest/mol.html
                         assert ~atom.is_hydrogen(), "Ensemble {}, model {}, chain {}, residue {}, atom {} is hydrogen".format(
@@ -180,6 +218,7 @@ def ensemble_validation(
                             residue_idx,
                             atom_idx,
                         )
+    return 
 
 def ensemble_cross_validation(reference: gemmi.Structure, ensemble: list[gemmi.Structure]):
     pass
@@ -253,6 +292,7 @@ def main(args):
     )
 
     # TODO Could also use the supported mmcif validation tool to ensure that all mmcif files.
+    # TODO Could also just use gemmi validate command...
     # Would be useful if validate_ensembles modifies mmcif file, but it currently doesn't
     # (ie: can be pip installed via https://pypi.org/project/pdbe-mmcif-validator/ and is on github at https://github.com/PDBeurope/mmcif-validator)
     return

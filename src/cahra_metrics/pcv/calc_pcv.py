@@ -99,9 +99,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--max_rank",
         "-r",
-        help="Max rank to use in pca cpmputation",
+        help="Max rank to use in pca computation",
         type=int,
-        default=10,
+        default=50,
     )
 
     parser.add_argument(
@@ -236,6 +236,10 @@ def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=
         print("{} has shape {}".format(os.path.basename(filename_prefix), models_as_numpy.shape))
     return models_as_numpy
 """
+
+def plot_s_viz():
+
+def plot_projection_onto_GT():
     
 def main(args):
     # check for CUDA
@@ -324,6 +328,11 @@ def main(args):
     # STEP 4 - save PCV info to file (use dict format?)
     # TODO: tidy this up to have set filenames in class
     for (label, pred_ensemble_dir, pcv) in zip(args.pred_ensemble_label, args.pred_ensemble_dir, pcv_pred):
+        # print of PCV for each pred ensemble
+        print(
+            "{}: PCV={}".format(label, pcv)
+        )
+
         if args.verbose:
             print("Adding PCV to json for {}".format(label))
         json_file=os.path.join(
@@ -342,8 +351,64 @@ def main(args):
         save_dict_to_json(results, updated_json_file)
 
     # ------------------------------------------------------------------------------------
-    # STEP 5 - visualise the # TODO what and why?
+    # STEP 5 - visualise the projection onto GT and ...
+    # plot_s_viz 
+    plt.plot(s_gt.numpy(), label="GT")
+    for (label, s) in zip(args.pred_ensemble_label, s_pred):
+        plt.plot(s.numpy(), label=label)
+    plt.yscale("log")
+    plt.xlabel("Principal Component")
+    plt.legend()
+    print("Writing plots to {}".format(results.pred_confs_dir)) # re-using from last loaded json
+    plt.savefig(os.path.join(results.pred_confs_dir, "s_plot.png"), dpi=300)
+    plt.savefig(os.path.join(results.pred_confs_dir, "s_plot.pdf"))
+    plt.clf()
 
+    # plot_s_viz_normalised
+    s_gt_cumul = torch.cumsum(s_gt, dim=0) / torch.sum(s_gt)
+    plt.plot(s_gt_cumul.numpy(), label="GT")
+    for (label, s) in zip(args.pred_ensemble_label s_pred):
+        s_cumul = torch.cumsum(s, dim=0) / torch.sum(s)
+        plt.plot(s_cumul.numpy(), label=label)
+    plt.yscale("log")
+    plt.xlabel("Principal Component")
+    plt.legend()
+    print("Writing plots to {}".format(results.pred_confs_dir)) # re-using from last loaded json
+    plt.savefig(os.path.join(results.pred_confs_dir, "s_plot_norm.png"), dpi=300)
+    plt.savefig(os.path.join(results.pred_confs_dir, "s_plot_norm.pdf"))
+    plt.clf()
+
+    # plot_projection_onto_GT
+    fig, ax = plt.subplots(
+        1,
+        len(args.pred_ensemble_label),
+        figsize=(10, 10),
+        layout="compressed",
+        sharex=True,
+        sharey=True
+    )
+    pc0 = 0
+    pc1 = 1
+
+    # gt
+    coeffs = u_gt @ np.diag(s_gt)
+    ax[0, 0].scatter(coeffs[:, pc0], coeffs[:, pc1], c=np.arange(coeffs.shape[0]))
+    ax[0, 0].set_title("PCA of GT frames")
+    # pred ensembles
+    for idx, (label, pred_ensemble, s) in enumerate(
+        zip(args.pred_ensemble_label, pred_ensembles_t, s_pred)
+    ):
+        coeffs_pred_ensemble = project_frames_to_pca(pred_ensemble, vh_gt)
+        sc = ax[0,idx+1].scatter(
+            coeffs_pred_ensemble[:, pc0],
+            coeffs_pred_ensemble[:, pc1],
+            c=np.arange(coeffs_pred_ensemble.shape[0]),
+        )
+        ax[0,idx+1].set_title("PCA of {} models".format(label))
+        fig.colorbar(sc, ax=ax[0, idx+1], label="Frame index")
+    plt.savefig(os.path.join(results.pred_confs_dir, "pcv_projection.png"), dpi=300)
+    plt.savefig(os.path.join(results.pred_confs_dir, "pcv_projection.pdf"))
+    plt.clf()
 
     # STEP 6 - for now print out the summary statistics at end of this script
     # TODO: make standalone script to make pd.DataFrame/csv from the jsons

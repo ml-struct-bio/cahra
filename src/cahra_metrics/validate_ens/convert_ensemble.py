@@ -32,7 +32,7 @@ import gemmi
 import os
 import subprocess
 
-from cahra_metrics.utilities.utils import get_ensemble, replace_file_ext
+from cahra_metrics.utilities.utils import get_ensemble, replace_file_ext, make_dir
 
 def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Set up arguments for parsing
@@ -64,6 +64,16 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         ),
         type=str,
         default="",
+    )
+
+    parser.add_argument(
+        "--update-chainid",
+        "-c",
+        help=(
+            "Update the chain ID, in gemmi format, ie: X:A"
+        ),
+        type=str,
+        default="A:A",
     )
 
     parser.add_argument(
@@ -105,6 +115,8 @@ def main(args):
         file_ext=args.orig_extension,
         verbose=args.verbose,
     )
+
+    make_dir(args.output_ensemble_dir, verbose=args.verbose)
     
     # determine updated file name
     for f in original_ens:
@@ -115,6 +127,18 @@ def main(args):
             args.verbose,
         )
         
+        # change chain name or fill empty chain before doing rest of conversion
+        subprocess.run(
+            [
+                "gemmi",
+                "convert",
+                "--rename-chain={}".format(args.update_chainid),
+                "-v",
+                f,
+                f,
+            ]
+        )
+
         # Use gemmi cmd line to convert and save to new location
         subprocess.run(
             [
@@ -123,6 +147,8 @@ def main(args):
                 "--verbose",
                 "--remove-h", # remove hydrogens if present
                 "--remove-waters", # remove water if present
+                "--rename-chain={}".format(args.update_chainid),
+                "-v",
                 f,
                 new_ensemble_filename,
             ],
