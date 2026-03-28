@@ -419,7 +419,7 @@ def main(args):
     # STEP 6 - for now print out the summary statistics at end of this script
     # TODO: make standalone script to make pd.DataFrame/csv from the jsons
     table = [
-        ["label", "sac", "lfc", "pcv", "sac_rank", "pcv_rank", "lfc_rank", "summed_score", "relative_ranking"]
+        ["label", "sac", "lfc", "pcv", "sac_rank", "lfc_rank", "pcv_rank", "summed_score", "relative_ranking"]
     ]
     lines = []
     for (label, pred_ensemble_dir) in zip(args.pred_ensemble_label, args.pred_ensemble_dir):
