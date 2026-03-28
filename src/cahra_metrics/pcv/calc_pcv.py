@@ -236,10 +236,6 @@ def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=
         print("{} has shape {}".format(os.path.basename(filename_prefix), models_as_numpy.shape))
     return models_as_numpy
 """
-
-def plot_s_viz():
-
-def plot_projection_onto_GT():
     
 def main(args):
     # check for CUDA
@@ -367,7 +363,7 @@ def main(args):
     # plot_s_viz_normalised
     s_gt_cumul = torch.cumsum(s_gt, dim=0) / torch.sum(s_gt)
     plt.plot(s_gt_cumul.numpy(), label="GT")
-    for (label, s) in zip(args.pred_ensemble_label s_pred):
+    for (label, s) in zip(args.pred_ensemble_label, s_pred):
         s_cumul = torch.cumsum(s, dim=0) / torch.sum(s)
         plt.plot(s_cumul.numpy(), label=label)
     plt.yscale("log")

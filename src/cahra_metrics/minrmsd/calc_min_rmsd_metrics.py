@@ -96,7 +96,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--extension",
         "-e",
         help=(
-            "File type (extension) to convert to."
+            "File type (extension) of each conformation."
         ),
         choices=["cif", "pdb", "json"],
         default="cif"
