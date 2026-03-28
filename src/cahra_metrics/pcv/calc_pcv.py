@@ -386,9 +386,9 @@ def main(args):
 
     # plot_projection_onto_GT
     fig, ax = plt.subplots(
+        len(args.pred_ensemble_label)+1, # +1 for GT projection
         1,
-        len(args.pred_ensemble_label),
-        figsize=(10, 10),
+        figsize=(10, 10*(len(args.pred_ensemble_label)+1)),
         layout="compressed",
         sharex=True,
         sharey=True
@@ -398,20 +398,20 @@ def main(args):
 
     # gt
     coeffs = u_gt @ np.diag(s_gt)
-    ax[0, 0].scatter(coeffs[:, pc0], coeffs[:, pc1], c=np.arange(coeffs.shape[0]))
-    ax[0, 0].set_title("PCA of GT frames")
+    ax[0].scatter(coeffs[:, pc0], coeffs[:, pc1], c=np.arange(coeffs.shape[0]))
+    ax[0].set_title("PCA of GT frames")
     # pred ensembles
     for idx, (label, pred_ensemble, s) in enumerate(
         zip(args.pred_ensemble_label, pred_ensembles_t, s_pred)
     ):
         coeffs_pred_ensemble = project_frames_to_pca(pred_ensemble, vh_gt)
-        sc = ax[0,idx+1].scatter(
+        sc = ax[idx+1].scatter(
             coeffs_pred_ensemble[:, pc0],
             coeffs_pred_ensemble[:, pc1],
             c=np.arange(coeffs_pred_ensemble.shape[0]),
         )
-        ax[0,idx+1].set_title("PCA of {} models".format(label))
-        fig.colorbar(sc, ax=ax[0, idx+1], label="Frame index")
+        ax[idx+1].set_title("PCA of {} models".format(label))
+        fig.colorbar(sc, ax=ax[idx+1], label="Frame index")
     plt.savefig(os.path.join(pred_confs_dir, "pcv_projection.png"), dpi=300)
     plt.savefig(os.path.join(pred_confs_dir, "pcv_projection.pdf"))
     plt.clf()
