@@ -63,3 +63,8 @@ indir="prelim_submissions/banana1/confs"
 outdir="prelim_submissions/banana1/confs_pdb"
 cahra-metrics convert_ensemble -c $UPDATE_CHAIN -i $indir -o $outdir -oe $ORIG_EXT -e $NEW_EXT -v > convert_banana1_ensemble.log 2>&1 &
 wait $!
+# also need to add a OXT atom to the final residue in banana1
+cahra-metrics add_missing_oxt -v -pe $outdir -e $NEW_EXT > add_missing_oxt_banana1.log 2>&1 &
+# add_missing_oxt writes out gemmi.Structure as pdb only, so convert these back to <fname>.$NEW_EXT files
+cahra-metrics convert_ensemble -c $UPDATE_CHAIN -i $outdir -o $outdir -oe "pdb" -e $NEW_EXT -v  > convert_banana1_ensemble_afterOXTaddition.log 2>&1 &
+

@@ -453,8 +453,10 @@ def main(args):
         np.argsort(lfcs)
     )
     # higher value is better so flip the index ordering to be negative before 2nd argsort
+    for (label,pcv) in zip(args.pred_ensemble_label, pcvs):
+        print()
     pcv_ranks = np.argsort(
-        np.argsort(pcvs)*(-1)
+        np.argsort(1.0-pcvs) # as PCV has range 0-1, we can use 1-pcv as *best is small* like the other metrics
     )
 
     # low is good, high bad 

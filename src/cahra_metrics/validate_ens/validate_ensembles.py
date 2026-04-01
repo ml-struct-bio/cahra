@@ -77,16 +77,6 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--copy_from_ref",
-        "-r",
-        help=(
-            "For insignificant differences, copy values from reference file and overwrite"
-            " predicted conformation file. For example, can update a C to a CB atom label."
-        ),
-        action="store_true",
-    )
-
-    parser.add_argument(
         "--verbose",
         "-v",
         help="Increase output verbosity",

@@ -32,6 +32,7 @@ import pkg_resources
 from pathlib import Path
 
 import cahra_metrics.validate_ens.convert_ensemble
+import cahra_metrics.validate_ens.add_missing_oxt
 import cahra_metrics.validate_ens.validate_ensembles
 import cahra_metrics.minrmsd.calc_min_rmsd_metrics
 import cahra_metrics.pcv.calc_pcv
@@ -61,6 +62,7 @@ def main():
 
     modules = [
         cahra_metrics.validate_ens.convert_ensemble,
+        cahra_metrics.validate_ens.add_missing_oxt,
         cahra_metrics.validate_ens.validate_ensembles,
         cahra_metrics.minrmsd.calc_min_rmsd_metrics,
         cahra_metrics.pcv.calc_pcv,
@@ -69,6 +71,7 @@ def main():
     module_helptext = [
         "Convert an ensemble of conformations from one file-type to another via"
         + "gemmi",
+        "Add missing OXT atom (duplicating position of terminal residue O atom)",
         "Validate an ensemble against itself and/or a reference ensemble.",
         "All to all optimal alignment of ensemble(s) to reference ensemble via"
         + " min-RMSD heavy-atom alignment and calculation of resulting RMSD"
