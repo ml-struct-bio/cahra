@@ -29,11 +29,11 @@ https://opensource.org/license/mit
 import argparse
 
 import gemmi
-import numpy as np
 
 from cahra_metrics.utilities.utils import get_ensemble
 
-def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+
+def add_arguments(parser: argparse.ArgumentParser):
     """Set up arguments for parsing
 
     Args:
@@ -57,11 +57,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--orig_extension",
         "-e",
-        help=(
-            "File type (extension) to convert to "
-        ),
+        help=("File type (extension) to convert to "),
         choices=["cif", "pdb", "json"],
-        default="cif"
+        default="cif",
     )
 
     parser.add_argument(
@@ -75,27 +73,31 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 def get_name():
     return "add_missing_oxt"
 
-def add_missing_oxt_atom(pdb: gemmi.Structure)->gemmi.Structure:
+
+def add_missing_oxt_atom(pdb: gemmi.Structure) -> gemmi.Structure:
     oxt = gemmi.Atom()
-    oxt.name="OXT"
-    oxt.element=gemmi.Element("O")
-    oxt.occ=1.00
-    oxt.b_iso=0.00
+    oxt.name = "OXT"
+    oxt.element = gemmi.Element("O")
+    oxt.occ = 1.00
+    oxt.b_iso = 0.00
 
     # grab the existing O atom position in terminal residue (for duplication)
     # and assign it as the position of the OXT atom also
     model = pdb[0]
     chain = model[0]
     residue = chain[-1]
-    copy_atom = residue.find_atom("O", altloc=" ") # space instead of empty str for altloc
+    copy_atom = residue.find_atom(
+        "O", altloc=" "
+    )  # space instead of empty str for altloc
     x = copy_atom.pos.x
     y = copy_atom.pos.y
     z = copy_atom.pos.z
 
-    oxt.pos = gemmi.Position(x,y,z)
-    
+    oxt.pos = gemmi.Position(x, y, z)
+
     residue.add_atom(oxt).pos
     return pdb
+
 
 def main(args):
 
@@ -115,23 +117,26 @@ def main(args):
                 len(pred_ensemble),
             )
         )
-    
+
     print(
-        "Adding missing OXT atom. Duplicating O position in terminal residue and using name OXT."
-        " This will degrade metric score, but probably not in a meaningful way (~1%? at a guess)."
+        (
+            "Adding missing OXT atom. Duplicating O position in terminal residue"
+            " and using name OXT."
+            " This will degrade metric score, but probably not in a meaningful way"
+            " (~1%? at a guess)."
+        )
     )
 
     # duplicate the terminal O atom to create OXT
     for st in pred_ensemble:
-        add_missing_oxt_atom(
-            st
-        )
-    
+        add_missing_oxt_atom(st)
+
     # overwrite the files with the added OXT
-    for (f, st) in zip(pred_ensemble_files, pred_ensemble):
+    for f, st in zip(pred_ensemble_files, pred_ensemble):
         st.write_pdb(f)
-    
+
     return
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

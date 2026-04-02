@@ -37,6 +37,16 @@ dependencies = [
     "gemmi-program"
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pre-commit",
+    "pytest",
+    "black==26.3.1",
+    "flake8==7.3.0",
+    "mypy==1.20.0",
+    "types-tabulate"
+]
+
 [project.scripts]
 cahra-metrics = "cahra_metrics.cli:main"
 
@@ -48,3 +58,16 @@ cahra-metrics = "cahra_metrics.cli:main"
 license = "mit"
 file = "licensecheck.json"
 format = "json"
+
+[tool.flake8]
+ignore = ['E231', 'E241']
+per-file-ignores = [
+    '__init__.py:F401',
+]
+max-line-length = 88
+count = true
+
+[[tool.mypy.overrides]]
+module = "mdtraj.*, tabulate.*"
+ignore_missing_imports = true
+

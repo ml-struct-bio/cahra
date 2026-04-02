@@ -3,13 +3,13 @@
 # from manual and automatic code checks.
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.1.0  
+    rev: 26.3.1  
     hooks:
       - id: black
         args:
         - --line-length=79
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       # - id: check-added-large-files
         # args: ['maxkb=500']
@@ -20,20 +20,20 @@ repos:
       - id: check-toml
       - id: check-yaml
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: 7.3.0
     hooks:
       - id: flake8
         args:
         - "--ignore=E203,W503"
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.1.1
+    rev: v1.20.0
     hooks:
       - id: mypy
         additional_dependencies: [pandas-stubs, types-Pillow, types-setuptools, types-PyYAML]
   - repo: local
     hooks:
       - id: pytest
-        stages: [commit, push]
+        stages: [pre-commit, pre-push]
         types: [python]
         name: pytest
         entry: pytest

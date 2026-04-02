@@ -25,16 +25,20 @@ SOFTWARE.
 https://opensource.org/license/mit
 
 """
+
 # TODO fill docstrings
 
 import argparse
-import gemmi
-import os
 import subprocess
 
-from cahra_metrics.utilities.utils import get_ensemble, replace_file_ext, make_dir
+from cahra_metrics.utilities.utils import (
+    get_ensemble,
+    replace_file_ext,
+    make_dir,
+)
 
-def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+
+def add_arguments(parser: argparse.ArgumentParser):
     """Set up arguments for parsing
 
     Args:
@@ -69,9 +73,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--update-chainid",
         "-c",
-        help=(
-            "Update the chain ID, in gemmi format, ie: X:A"
-        ),
+        help=("Update the chain ID, in gemmi format, ie: X:A"),
         type=str,
         default="A:A",
     )
@@ -79,21 +81,17 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--orig-extension",
         "-oe",
-        help=(
-            "File type (extension) to convert to "
-        ),
+        help=("File type (extension) to convert to "),
         choices=["cif", "pdb", "json"],
-        default="pdb"
+        default="pdb",
     )
 
     parser.add_argument(
         "--extension",
         "-e",
-        help=(
-            "File type (extension) to convert to "
-        ),
+        help=("File type (extension) to convert to "),
         choices=["cif", "pdb", "json"],
-        default="cif"
+        default="cif",
     )
 
     parser.add_argument(
@@ -103,8 +101,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
     )
 
+
 def get_name():
     return "convert_ensemble"
+
 
 # gemmi can be used to convert between PDB, MMCIF and MMJSON
 # see gemmi convert: https://gemmi.readthedocs.io/en/latest/program.html
@@ -117,16 +117,16 @@ def main(args):
     )
 
     make_dir(args.output_ensemble_dir, verbose=args.verbose)
-    
+
     # determine updated file name
     for f in original_ens:
-        new_ensemble_filename=replace_file_ext(
+        new_ensemble_filename = replace_file_ext(
             f,
             args.extension,
             args.output_ensemble_dir,
             args.verbose,
         )
-        
+
         # change chain name or fill empty chain before doing rest of conversion
         subprocess.run(
             [
@@ -145,8 +145,8 @@ def main(args):
                 "gemmi",
                 "convert",
                 "--verbose",
-                "--remove-h", # remove hydrogens if present
-                "--remove-waters", # remove water if present
+                "--remove-h",  # remove hydrogens if present
+                "--remove-waters",  # remove water if present
                 "--rename-chain={}".format(args.update_chainid),
                 "-v",
                 f,
@@ -154,7 +154,7 @@ def main(args):
             ],
             capture_output=args.verbose,
         )
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

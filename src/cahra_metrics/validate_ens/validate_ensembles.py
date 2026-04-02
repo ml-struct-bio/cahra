@@ -27,14 +27,12 @@ https://opensource.org/license/mit
 """
 
 import argparse
-
 import gemmi
-import numpy as np
 
-from cahra_metrics.utilities.utils import get_ensemble, Ensemble_Stats
+from cahra_metrics.utilities.utils import get_ensemble
 
 
-def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def add_arguments(parser: argparse.ArgumentParser):
     """Set up arguments for parsing
 
     Args:
@@ -63,17 +61,19 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
             " truth ensemble."
         ),
         type=str,
-        default="/media/jg/My Book/JGreer/dinaMISMO/dinaMISMO-systems-prep/PreP/pilot_studies/ConformationSampling/extract_frames_6xou_unsteered_0-200ns/extract_frames_6xou_unsteered_0-200ns",
+        default=(
+            "/media/jg/My Book/JGreer/dinaMISMO/dinaMISMO-systems-prep/PreP/"
+            "pilot_studies/ConformationSampling/extract_frames_6xou_unsteered_0-"
+            "200ns/extract_frames_6xou_unsteered_0-200ns",
+        ),
     )
 
     parser.add_argument(
         "--orig_extension",
         "-e",
-        help=(
-            "File type (extension) to convert to "
-        ),
+        help=("File type (extension) to convert to "),
         choices=["cif", "pdb", "json"],
-        default="cif"
+        default="cif",
     )
 
     parser.add_argument(
@@ -83,13 +83,14 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         action="store_true",
     )
 
+
 def ensemble_validation(
     fnames: list[str],
     ref_st: gemmi.Structure,
     ensemble: list[gemmi.Structure],
-    verbose: bool=False,
+    verbose: bool = False,
 ):
-    # Can be applied using reference model as first model in this ensemble 
+    # Can be applied using reference model as first model in this ensemble
     # for self-validation or the first model in the GT ensemble for validation
     # of pred ensemble against GT ensemble
     # GT ensemble must be self-validated before being used to validate
@@ -100,33 +101,46 @@ def ensemble_validation(
     # returns the pred_conf with (if any are made) the updates
 
     # check the correct number of models are in the list
-    assert len(fnames)==len(ensemble), "# fnames ({}) and ensembles ({}) do not match!".format(
+    assert len(fnames) == len(
+        ensemble
+    ), "# fnames ({}) and ensembles ({}) do not match!".format(
         len(fnames),
         len(ensemble),
     )
-    ensemble_updates=[]
     # loop through ensemble conformations
     for ensemble_idx, (fname, st) in enumerate(zip(fnames, ensemble)):
         if verbose:
             print("Validate conformation {}: {}".format(ensemble_idx, fname))
         # compare reference and this model from the ensemble
         for model_idx, (ref_model, model) in enumerate(zip(ref_st, st)):
-            assert ref_model.num==model.num, "Ensemble {}, model {} numbers do not match: {} vs {}".format(
+            assert (
+                ref_model.num == model.num
+            ), "Ensemble {}, model {} numbers do not match: {} vs {}".format(
                 ensemble_idx,
                 model_idx,
                 ref_model.num,
                 model.num,
             )
             # check all chains are the same
-            for chain_idx, (ref_chain, chain) in enumerate(zip(ref_model, model)):
-                assert ref_chain.name==chain.name, "Ensemble {}, model {}, chain {} names do not match: {} vs {}".format(
+            for chain_idx, (ref_chain, chain) in enumerate(
+                zip(ref_model, model)
+            ):
+                assert ref_chain.name == chain.name, (
+                    "Ensemble {}, model {}, chain {} names do not match: "
+                    "{} vs {}"
+                ).format(
                     ensemble_idx,
                     model_idx,
                     chain_idx,
                     ref_chain.name,
                     chain.name,
                 )
-                assert ref_chain.count_atom_sites()==chain.count_atom_sites(), "Ensemble {}, model {}, chain {} # atoms in chain {} vs {} not the same".format(
+                assert (
+                    ref_chain.count_atom_sites() == chain.count_atom_sites()
+                ), (
+                    "Ensemble {}, model {}, chain {} # atoms in chain {} vs {}"
+                    " not the same"
+                ).format(
                     ensemble_idx,
                     model_idx,
                     chain_idx,
@@ -135,8 +149,13 @@ def ensemble_validation(
                 )
                 # could compare mass, but no need if comparing all atoms are the same
                 # check all residues are the same
-                for residue_idx, (ref_residue, residue) in enumerate(zip(ref_chain, chain)):
-                    assert ref_residue.name==residue.name, "Ensemble {}, model {}, chain {}, residue {} names do not match: {} vs {}".format(
+                for residue_idx, (ref_residue, residue) in enumerate(
+                    zip(ref_chain, chain)
+                ):
+                    assert ref_residue.name == residue.name, (
+                        "Ensemble {}, model {}, chain {}, residue {} names do not"
+                        " match: {} vs {}"
+                    ).format(
                         ensemble_idx,
                         model_idx,
                         chain_idx,
@@ -145,14 +164,21 @@ def ensemble_validation(
                         residue.name,
                     )
                     # check all atoms are the same
-                    for atom_idx, (ref_atom, atom) in enumerate(zip(ref_residue, residue)):
+                    for atom_idx, (ref_atom, atom) in enumerate(
+                        zip(ref_residue, residue)
+                    ):
                         # as atoms in a residue don't have a defined order in a cif file
                         # we instead need to check that all atoms in both
                         # are present in the other
                         # Currently not counting # times each is present
-                        
+
                         # check pred_atoms in reference residue
-                        assert atom.name in [residue_atom.name for residue_atom in ref_residue], "Ensemble {}, model {}, chain {}, residue {}, atom {} name {} not present in reference!".format(
+                        assert atom.name in [
+                            residue_atom.name for residue_atom in ref_residue
+                        ], (
+                            "Ensemble {}, model {}, chain {}, residue {}, atom {}"
+                            " name {} not present in reference!"
+                        ).format(
                             ensemble_idx,
                             model_idx,
                             chain_idx,
@@ -160,7 +186,13 @@ def ensemble_validation(
                             atom_idx,
                             atom.name,
                         )
-                        assert ref_atom.element in [residue_atom.element for residue_atom in ref_residue], "Ensemble {}, model {}, chain {}, residue {}, atom {} element {} not present in reference!".format(
+                        assert ref_atom.element in [
+                            residue_atom.element
+                            for residue_atom in ref_residue
+                        ], (
+                            "Ensemble {}, model {}, chain {}, residue {}, atom {}"
+                            " element {} not present in reference!"
+                        ).format(
                             ensemble_idx,
                             model_idx,
                             chain_idx,
@@ -170,7 +202,12 @@ def ensemble_validation(
                         )
 
                         # check ref_atoms in pred residue
-                        assert ref_atom.name in [residue_atom.name for residue_atom in residue], "Ensemble {}, model {}, chain {}, residue {}, atom {} name not present in predicted!".format(
+                        assert ref_atom.name in [
+                            residue_atom.name for residue_atom in residue
+                        ], (
+                            "Ensemble {}, model {}, chain {}, residue {}, atom {}"
+                            " name {} not present in predicted!"
+                        ).format(
                             ensemble_idx,
                             model_idx,
                             chain_idx,
@@ -178,7 +215,12 @@ def ensemble_validation(
                             atom_idx,
                             ref_atom.name,
                         )
-                        assert ref_atom.element in [residue_atom.element for residue_atom in residue], "Ensemble {}, model {}, chain {}, residue {}, atom {} element {} not present in predicted!".format(
+                        assert ref_atom.element in [
+                            residue_atom.element for residue_atom in residue
+                        ], (
+                            "Ensemble {}, model {}, chain {}, residue {}, atom {}"
+                            " element {} not present in predicted!"
+                        ).format(
                             ensemble_idx,
                             model_idx,
                             chain_idx,
@@ -186,10 +228,13 @@ def ensemble_validation(
                             atom_idx,
                             ref_atom.element,
                         )
-                        
+
                         # check atom serial number is identical
                         """
-                        assert ref_atom.serial==atom.serial, "Ensemble {}, model {}, chain {}, residue {}, atom {} serial numbers do not match: {} vs {}".format(
+                        assert ref_atom.serial==atom.serial, (
+                            "Ensemble {}, model {}, chain {}, residue {},"
+                            "atom {} serial numbers do not match: {} vs {}"
+                        ).format(
                             ensemble_idx,
                             model_idx,
                             chain_idx,
@@ -201,20 +246,28 @@ def ensemble_validation(
                         """
                         # check atom is not hydrogen
                         # see https://gemmi.readthedocs.io/en/latest/mol.html
-                        assert ~atom.is_hydrogen(), "Ensemble {}, model {}, chain {}, residue {}, atom {} is hydrogen".format(
+                        assert ~atom.is_hydrogen(), (
+                            "Ensemble {}, model {}, chain {}, residue {},"
+                            " atom {} is hydrogen"
+                        ).format(
                             ensemble_idx,
                             model_idx,
                             chain_idx,
                             residue_idx,
                             atom_idx,
                         )
-    return 
+    return
 
-def ensemble_cross_validation(reference: gemmi.Structure, ensemble: list[gemmi.Structure]):
+
+def ensemble_cross_validation(
+    reference: gemmi.Structure, ensemble: list[gemmi.Structure]
+):
     pass
+
 
 def get_name():
     return "validate_ensembles"
+
 
 def main(args):
     # Load GT ensemble
@@ -249,7 +302,9 @@ def main(args):
         )
 
     print(
-        "GT ensemble self-validation using reference:\n{}\n".format(gt_ensemble_files[0])
+        "GT ensemble self-validation using reference:\n{}\n".format(
+            gt_ensemble_files[0]
+        )
     )
     # GT self-validation
     ensemble_validation(
@@ -260,7 +315,9 @@ def main(args):
     )
 
     print(
-        "Pred ensemble self-validation using reference:\n{}\n".format(pred_ensemble_files[0])
+        "Pred ensemble self-validation using reference:\n{}\n".format(
+            pred_ensemble_files[0]
+        )
     )
     # Pred self-validation
     ensemble_validation(
@@ -271,7 +328,9 @@ def main(args):
     )
 
     print(
-        "Pred ensemble validation against GT using reference:\n{}\n".format(gt_ensemble_files[0])
+        "Pred ensemble validation against GT using reference:\n{}\n".format(
+            gt_ensemble_files[0]
+        )
     )
     # Pred validation against GT ref
     ensemble_validation(
@@ -281,11 +340,15 @@ def main(args):
         verbose=True,
     )
 
-    # TODO Could also use the supported mmcif validation tool to ensure that all mmcif files.
+    # TODO Could also use the supported mmcif validation tool to ensure that
+    # all mmcif files.
     # TODO Could also just use gemmi validate command...
-    # Would be useful if validate_ensembles modifies mmcif file, but it currently doesn't
-    # (ie: can be pip installed via https://pypi.org/project/pdbe-mmcif-validator/ and is on github at https://github.com/PDBeurope/mmcif-validator)
+    # Would be useful if validate_ensembles modifies mmcif file, but it currently
+    # doesn't
+    # (ie: can be pip installed via https://pypi.org/project/pdbe-mmcif-validator/
+    # and is on github at https://github.com/PDBeurope/mmcif-validator)
     return
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

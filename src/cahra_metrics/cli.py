@@ -28,7 +28,7 @@ https://opensource.org/license/mit
 
 import os
 import argparse
-import pkg_resources
+from importlib.metadata import version
 from pathlib import Path
 
 import cahra_metrics.validate_ens.convert_ensemble
@@ -37,8 +37,10 @@ import cahra_metrics.validate_ens.validate_ensembles
 import cahra_metrics.minrmsd.calc_min_rmsd_metrics
 import cahra_metrics.pcv.calc_pcv
 
+
 def get_cahra_metrics_parent() -> Path:
     return Path(__file__).parent.parent.parent
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -48,7 +50,7 @@ def main():
         "--version",
         action="version",
         version="CAHRA-metrics version {}, license is found in {}".format(
-            pkg_resources.get_distribution("cahra-metrics").version,
+            version("cahra-metrics"),
             os.path.join(get_cahra_metrics_parent(), "LICENSE"),
         ),
     )
@@ -69,16 +71,22 @@ def main():
     ]
 
     module_helptext = [
-        "Convert an ensemble of conformations from one file-type to another via"
-        + "gemmi",
+        (
+            "Convert an ensemble of conformations from one file-type to another via"
+            "gemmi"
+        ),
         "Add missing OXT atom (duplicating position of terminal residue O atom)",
         "Validate an ensemble against itself and/or a reference ensemble.",
-        "All to all optimal alignment of ensemble(s) to reference ensemble via"
-        + " min-RMSD heavy-atom alignment and calculation of resulting RMSD"
-     " and RMSF-based metrics.",
-        "Calculate proportion of captured variance between ensemble(s)"
-        + " and reference ensemble. Ensure ensembles are pre-aligned (which"
-        + " can be done by running RMSD/RMSF metric calculation).",
+        (
+            "All to all optimal alignment of ensemble(s) to reference ensemble via"
+            " min-RMSD heavy-atom alignment and calculation of resulting RMSD"
+            " and RMSF-based metrics."
+        ),
+        (
+            "Calculate proportion of captured variance between ensemble(s)"
+            " and reference ensemble. Ensure ensembles are pre-aligned (which"
+            " can be done by running RMSD/RMSF metric calculation)."
+        ),
     ]
 
     for helptext, module in zip(module_helptext, modules):

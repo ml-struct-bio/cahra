@@ -25,26 +25,25 @@ SOFTWARE.
 https://opensource.org/license/mit
 
 """
+
 # TODO fill docstrings
 
 import argparse
 import os
-import re
 import copy
-import glob2 as glob
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import MDAnalysis as mda
-from MDAnalysis.analysis import diffusionmap, align, rms
+from MDAnalysis.analysis import align, rms
 from cahra_metrics.utilities.utils import (
     get_ensemble,
     replace_file_ext,
     Ensemble_Stats,
     save_dict_to_json,
-) 
+)
 
-def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+
+def add_arguments(parser: argparse.ArgumentParser):
     """Set up arguments for parsing
 
     Args:
@@ -81,7 +80,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
             " truth ensemble."
         ),
         type=str,
-        default="/media/jg/My Book/JGreer/dinaMISMO/dinaMISMO-systems-prep/PreP/pilot_studies/ConformationSampling/extract_frames_6xou_unsteered_0-200ns/extract_frames_6xou_unsteered_0-200ns",
+        default=(
+            "/media/jg/My Book/JGreer/dinaMISMO/dinaMISMO-systems-prep/PreP/"
+            "pilot_studies/ConformationSampling/extract_frames_6xou_unsteered_0-200ns/"
+            "extract_frames_6xou_unsteered_0-200ns"
+        ),
     )
 
     parser.add_argument(
@@ -95,11 +98,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--extension",
         "-e",
-        help=(
-            "File type (extension) of each conformation."
-        ),
+        help=("File type (extension) of each conformation."),
         choices=["cif", "pdb", "json"],
-        default="cif"
+        default="cif",
     )
 
     parser.add_argument(
@@ -114,56 +115,66 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Increase output verbosity",
         action="store_true",
     )
-    
+
 
 def get_name():
     return "calc_min_rmsd_metrics"
 
+
 def align_min_rmsd(
-        pred_traj: mda.Universe,
-        GT_traj: mda.Universe,
-        pred_traj_copy: mda.Universe,
-        verbose: bool = False,
+    pred_traj: mda.Universe,
+    GT_traj: mda.Universe,
+    pred_traj_copy: mda.Universe,
+    verbose: bool = False,
 ) -> tuple[dict, mda.Universe]:
 
     # loop through each predicted structure and find GT structure with min RMSD
-    rmsd_min = {}
-    rmsd_min["pred_index"]=[]
-    rmsd_min["rmsd_min"]=[]
-    rmsd_min["gt_index"]=[]
+    rmsd_min: dict = {}
+    rmsd_min["pred_index"] = []
+    rmsd_min["rmsd_min"] = []
+    rmsd_min["gt_index"] = []
     # pred_traj_aligned is not yet aligned and is at this point just a copy of pred_traj
-    for i, pred in enumerate(zip(pred_traj.trajectory, pred_traj_copy.trajectory)):
+    for i, pred in enumerate(
+        zip(pred_traj.trajectory, pred_traj_copy.trajectory)
+    ):
         rmsd_vals = []
         for GT in GT_traj.trajectory:
             # calc rmsd
             # align the pred model to the GT model
-            # rms.rmsd docs: https://docs.mdanalysis.org/1.1.1/documentation_pages/analysis/rms.html#module-MDAnalysis.analysis.rms
+            # rms.rmsd docs: https://docs.mdanalysis.org/1.1.1/
+            # documentation_pages/analysis/rms.html#module-MDAnalysis.analysis.rms
             # it aligns set of coords (arg1) to ref (arg2)
             # superpose implies center=True
 
             # here we are not excluding hist tag in rmsd calc or in min rmsd alignment
             rmsd_vals.append(
                 rms.rmsd(
-                    pred_traj.select_atoms("protein").positions, # TODO decide on whether to use all (heavy) atoms for rmsd calculation
-                    GT_traj.select_atoms("protein").positions, # TODO update as above
-                    # ensuring QCP superposition seems to make rms.rmsd and align.alignto
-                    # np.close to each other
+                    pred_traj.select_atoms(
+                        "protein"
+                        # TODO decide on whether to use all (heavy) atoms for
+                        # rmsd calculation
+                    ).positions,
+                    GT_traj.select_atoms(
+                        "protein"
+                    ).positions,  # TODO update as above
+                    # ensuring QCP superposition seems to make rms.rmsd and
+                    # align.alignto np.close to each other
                     superposition=True,
                 )
             )
-        rmsd_vals=np.array(rmsd_vals,dtype=float)
-        min_index = np.argmin(rmsd_vals)
-        # TODO: decide whether to also store pairwise min-rmsds to dictionary. May be useful for later analyses
-        # when rmsd_min dict is saved to file?
-        # casting to int/float as numpy dtypes not save-able as json
+        rmsd_vals_arr: np.ndarray[tuple] = np.array(rmsd_vals, dtype=float)
+        min_index = np.argmin(rmsd_vals_arr)
+        # TODO: decide whether to also store pairwise min-rmsds to dictionary.
+        # May be useful for later analyses when rmsd_min dict is saved to file?
+        # Casting to int/float as numpy dtypes not save-able as json.
         rmsd_min["pred_index"].append(int(i))
-        rmsd_min["rmsd_min"].append(float(rmsd_vals[min_index]))
+        rmsd_min["rmsd_min"].append(float(rmsd_vals_arr[min_index]))
         rmsd_min["gt_index"].append(int(min_index))
-    
+
     # now that we have the indices of the best rmsd fit for each pred_traj
     # we now align them in the copied pred_traj
     # and fill in the new atomic positions
-    for (pred_idx,gt_idx, rmsd_min_val) in zip(
+    for pred_idx, gt_idx, rmsd_min_val in zip(
         rmsd_min["pred_index"],
         rmsd_min["gt_index"],
         rmsd_min["rmsd_min"],
@@ -171,13 +182,15 @@ def align_min_rmsd(
         # change the frame of the pred_traj and pred_traj_copy to correct idx
         pred_traj.trajectory[pred_idx]
         pred_traj_copy.trajectory[pred_idx]
-        # change the frame of GT_traj to correct idx 
+        # change the frame of GT_traj to correct idx
         GT_traj.trajectory[gt_idx]
         # do the alignment between the two frames using GT as ref
         rmsd_unaligned, rmsd_aligned = align.alignto(
             pred_traj,
             GT_traj,
-            select="protein" # NOTE: Aligning using protein assuming H is already removed! Also, not ignoring hist-tag here
+            select="protein",
+            # NOTE: Aligning using protein assuming H is
+            # already removed! Also, not ignoring hist-tag here
         )
         if verbose:
             print(
@@ -188,79 +201,85 @@ def align_min_rmsd(
                 )
             )
         # check the alignment is approx the same as reported by rms.rmsd above
-        assert(
-            np.isclose(
+        assert np.isclose(
             rmsd_min_val,
             rmsd_aligned,
-            )
-        ), "rmsd_min:{}\nrmsd_aligned:{}".format(
-            rmsd_min_val, rmsd_aligned
-        )
+        ), "rmsd_min:{}\nrmsd_aligned:{}".format(rmsd_min_val, rmsd_aligned)
 
         # input aligned atomic positions to copy of pred_traj
-        # have to do here because pred_traj will reset to unaligned after iteration through loop
+        # Have to do here because pred_traj will reset to unaligned after
+        # iteration through loop
         pred_traj_copy.atoms.positions = copy.deepcopy(
             pred_traj.atoms.positions
         )
 
     return rmsd_min, pred_traj_copy
 
+
 def calc_lfc(rmsf_gt, rmsf_pred):
-    abs_diff_rmsf = np.abs(rmsf_gt-rmsf_pred)
-    lfc = np.average(
-        abs_diff_rmsf
-    )
-    lfc_stddev= np.std(
-        abs_diff_rmsf
-    )
+    abs_diff_rmsf = np.abs(rmsf_gt - rmsf_pred)
+    lfc = np.average(abs_diff_rmsf)
+    lfc_stddev = np.std(abs_diff_rmsf)
     return lfc, lfc_stddev, abs_diff_rmsf
+
 
 def make_plot_lfc(ad_rmsf, plot_dir: str):
     # TODO add docstring with info about non-H atom indices
-    plt.plot(range(len(ad_rmsf)), ad_rmsf, color="blue", label="|$\Delta$RMSF|")
-    plt.xlabel('Atom index')
-    plt.ylabel('RMSF ($\AA$)')
-    plt.axvspan(79, 2175, zorder=0, alpha=0.2, color='orange', label='D1')
-    plt.axvspan(4346, 4366, zorder=0, alpha=0.2, color='blue', label='LNK')
-    plt.axvspan(6465, 8085, zorder=0, alpha=0.2, color='green', label='D4')
+    plt.plot(
+        range(len(ad_rmsf)), ad_rmsf, color="blue", label="|$\\Delta$RMSF|"
+    )
+    plt.xlabel("Atom index")
+    plt.ylabel("RMSF ($\\AA$)")
+    plt.axvspan(79, 2175, zorder=0, alpha=0.2, color="orange", label="D1")
+    plt.axvspan(4346, 4366, zorder=0, alpha=0.2, color="blue", label="LNK")
+    plt.axvspan(6465, 8085, zorder=0, alpha=0.2, color="green", label="D4")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, "rmsf.png"), dpi=300)
     plt.savefig(os.path.join(plot_dir, "rmsf.pdf"))
     plt.clf()
 
+
 def make_over_under_represent_het_plot(
-        rmsf_gt,
-        rmsf_pred,
-        plot_dir: str,
-        avg_over: int=100,
+    rmsf_gt,
+    rmsf_pred,
+    plot_dir: str,
+    avg_over: int = 100,
 ):
     # +ve value of diff means heterogeneity under-estimated
     # -ve value of diff means heterogeneity over-estimated
-    diff = rmsf_gt-rmsf_pred
+    diff = rmsf_gt - rmsf_pred
     avgs = []
     for i, atom in enumerate(range(len(diff))):
-        if i<avg_over:
+        if i < avg_over:
             continue
         else:
-            avgs.append(np.average(diff[i-avg_over:i]))
-        
-    avgs = np.array(avgs)
+            avgs.append(np.average(diff[i - avg_over : i]))
+
+    avgs_arr = np.array(avgs)
     plt.plot(range(len(diff)), diff, color="red", label="GT-pred")
-    plt.plot(range(len(diff))[round(avg_over/2.):len(diff)-round(avg_over/2.)], avgs, color="black", label="100-atom-avg")
-    plt.xlabel('Atom number')
-    plt.ylabel('RMSF ($\AA$)')
-    plt.axvspan(79, 2175, zorder=0, alpha=0.2, color='orange', label='D1')
-    plt.axvspan(4346, 4366, zorder=0, alpha=0.2, color='blue', label='LNK')
-    plt.axvspan(6465, 8085, zorder=0, alpha=0.2, color='green', label='D4')
+    plt.plot(
+        range(len(diff))[
+            round(avg_over / 2.0) : len(diff) - round(avg_over / 2.0)
+        ],
+        avgs_arr,
+        color="black",
+        label="100-atom-avg",
+    )
+    plt.xlabel("Atom number")
+    plt.ylabel("RMSF ($\\AA$)")
+    plt.axvspan(79, 2175, zorder=0, alpha=0.2, color="orange", label="D1")
+    plt.axvspan(4346, 4366, zorder=0, alpha=0.2, color="blue", label="LNK")
+    plt.axvspan(6465, 8085, zorder=0, alpha=0.2, color="green", label="D4")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, "rmsf_diff.png"), dpi=300)
     plt.savefig(os.path.join(plot_dir, "rmsf_diff.pdf"))
     plt.clf()
 
+
 def main(args):
-    
+
     # STEP 1 - load predicted and ground truth ensembles
     # ground truth ensemble
     gt_ensemble = get_ensemble(
@@ -277,17 +296,18 @@ def main(args):
     if args.verbose:
         for conf in pred_ensemble:
             print(os.path.basename(conf))
-    
+
     # ------------------------------------------------------------------------------------
     # STEP 2 - create mda universes to hold the ensembles
     gt_u = mda.Universe(
-        gt_ensemble[0], # topology
+        gt_ensemble[0],  # topology
         gt_ensemble,
         in_memory=True,
     )
 
     pred_u = mda.Universe(
-        gt_ensemble[0], # pred_ensemble[0], # topology TODO: decide whether to use gt_ensemble[0] instead for topology
+        gt_ensemble[0],
+        # using GT for topology
         pred_ensemble,
         in_memory=True,
     )
@@ -295,7 +315,8 @@ def main(args):
     # make a copy of pred_u which we later fill with the conformations once they are
     # optimally aligned to ground truth ensemble
     pred_u_copy = mda.Universe(
-        gt_ensemble[0], # pred_ensemble[0], # topology TODO: decide whether to use gt_ensemble[0] instead for topology
+        gt_ensemble[0],
+        # using GT for topology
         pred_ensemble,
         in_memory=True,
     )
@@ -309,7 +330,7 @@ def main(args):
     # Re-aligning may change the alignment slightly but is done to allow
     # calculation of RMSF metrics against a truth ensemble aligned against
     # itself. This is done below
-    
+
     # align to reference
     # NOTE: we do NOT remove hist-tag from ground-truth alignment as this
     # may slightly affect the GT RMSF distribution
@@ -319,13 +340,13 @@ def main(args):
     # NOTE: we select all protein rather than backbone only
     # The hydrogens (and any other non-heavy atoms) must have) already been
     # removed!
-    aligner_gt_u = align.AlignTraj(
+    aligner_gt_u = align.AlignTraj(  # noqa: F841
         gt_u,
         gt_u,
-        select='protein', # and resnum 10:1014',
+        select="protein",  # and resnum 10:1014',
     ).run()
     # NOTE: use in_memory so the alignments persist!!!!!
-    
+
     # NOTE: if using mass-weighting in RMSD/RMSF calculations, must also use
     # it to do the GT alignment (as this is via min RMSD!)
     # We DO NOT currently use mass-weighting.
@@ -349,16 +370,16 @@ def main(args):
         pred_u_copy,
     )
     if args.verbose:
-        for key,val in pred_u_rmsd_min_dict.items():
-            print("{}:{}".format(key,val))
-    
+        for key, val in pred_u_rmsd_min_dict.items():
+            print("{}:{}".format(key, val))
+
     # ------------------------------------------------------------------------------------
     # STEP 5 - create directories to save aligned atomic models as pdb/xtc.
     # NOTE: Currently saving these aligned ensembles as dir of pdbs and a xtc trajectory
     # as writing mmcif is not supported by MDAnalysis from a mda.Universe
-    # Also creating a directory which can be used as output to convert pdbs to mmcifs via
-    # cahra-metric convert_ensemble <args>
-    
+    # Also creating a directory which can be used as output to convert pdbs to
+    # mmcifs via cahra-metric convert_ensemble <args>
+
     # create the directory structure and results object
     results = Ensemble_Stats(
         args.output_dir,
@@ -373,17 +394,19 @@ def main(args):
     # gt_u is self-aligned GT ensemble mda.Universe
     # write xtc
     gt_u.atoms.write(
-        os.path.join(results.gt_confs_dir_xtc, "{}.xtc".format(args.pred_ensemble_label)),
+        os.path.join(
+            results.gt_confs_dir_xtc, "{}.xtc".format(args.pred_ensemble_label)
+        ),
         overwrite=args.write_gt,
     )
     # write pdbs
     gt_ensemble_filenames = []
     # loop through traj frames and write each one to file
-    for (gt_filename, gt_frame) in zip(gt_ensemble, gt_u.trajectory):
+    for gt_filename, gt_frame in zip(gt_ensemble, gt_u.trajectory):
         if args.verbose:
             print("Saving GT frame {} to pdb".format(gt_frame.frame))
         # keep same file labels but convert to pdb
-        new_ensemble_filename=replace_file_ext(
+        new_ensemble_filename = replace_file_ext(
             os.path.basename(gt_filename),
             "pdb",
             results.gt_confs_dir_pdbs,
@@ -399,19 +422,28 @@ def main(args):
             )
     # no way to write mmcifs from mda.Universe. Could use conversion tool from pdb
 
-    # NOTE: SAVE min-RMSD-aligned pred models to disk in a new directory 
+    # NOTE: SAVE min-RMSD-aligned pred models to disk in a new directory
     # pred_u_rmsd_min_aligned is min-RMSD aligned pred ensemble mda.Universe
     # write xtc
     pred_u_rmsd_min_aligned.atoms.write(
-        os.path.join(results.pred_confs_dir_label_xtc, "{}.xtc".format(args.pred_ensemble_label))
+        os.path.join(
+            results.pred_confs_dir_label_xtc,
+            "{}.xtc".format(args.pred_ensemble_label),
+        )
     )
     # write pdbs
     pred_ensemble_filenames = []
-    for (pred_filename, pred_u_rmsd_min_aligned_frame) in zip(pred_ensemble, pred_u_rmsd_min_aligned.trajectory):
+    for pred_filename, pred_u_rmsd_min_aligned_frame in zip(
+        pred_ensemble, pred_u_rmsd_min_aligned.trajectory
+    ):
         if args.verbose:
-            print("Saving pred frame {} to pdb".format(pred_u_rmsd_min_aligned_frame.frame))
+            print(
+                "Saving pred frame {} to pdb".format(
+                    pred_u_rmsd_min_aligned_frame.frame
+                )
+            )
         # keep same file labels but convert to pdb
-        new_ensemble_filename=replace_file_ext(
+        new_ensemble_filename = replace_file_ext(
             os.path.basename(pred_filename),
             "pdb",
             results.pred_confs_dir_label_pdbs,
@@ -425,21 +457,24 @@ def main(args):
         )
     # no way to write mmcifs from mda.Universe. Could use conversion tool from pdb
 
-    # add gt and pred saved filenames to results object now that the aligned models are saved
+    # add gt and pred saved filenames to results object now that the aligned models
+    # are saved
     results.gt_filenames = gt_ensemble_filenames
     results.pred_filenames = pred_ensemble_filenames
     # also add these filenames to the rmsd_min dict as a list
-    pred_u_rmsd_min_dict["pred_filename"]=results.pred_filenames
+    pred_u_rmsd_min_dict["pred_filename"] = results.pred_filenames
     # write this dict to the results object
-    results.ensemble={}
-    results.ensemble["conf_stats"]=pred_u_rmsd_min_dict
-    results.ensemble["ensemble_stats"]={}
-    results.ensemble["ensemble_stats"]["pred_ensemble_label"]=args.pred_ensemble_label
+    results.ensemble = {}
+    results.ensemble["conf_stats"] = pred_u_rmsd_min_dict
+    results.ensemble["ensemble_stats"] = {}
+    results.ensemble["ensemble_stats"][
+        "pred_ensemble_label"
+    ] = args.pred_ensemble_label
 
     # ------------------------------------------------------------------------------------
     # STEP 6 - get SAC
     SAC = np.average(np.array(pred_u_rmsd_min_dict["rmsd_min"]))
-    results.ensemble["ensemble_stats"]["sac"]=SAC
+    results.ensemble["ensemble_stats"]["sac"] = SAC
     print("SAC: {}".format(SAC))
     # TODO Save pred_u_rmsd_min_dict and SAC/LFC values to file (use dict for latter?)
     # also could save atom-wise RMSF values for aligned-pred-ensemble (AND GT ensemble,
@@ -448,8 +483,8 @@ def main(args):
     # ------------------------------------------------------------------------------------
     # STEP 7 - calc RMSF on per-residue basis to allow calculation of LFC
     # NOTE: Not mass-weighting this currently. Currently just give all atoms same
-    # weighting. The hydrogens should not be present in the submitted (or GT) mmcif files
-    # but ensuring this is the case should be done by validate_ensembles code
+    # weighting. The hydrogens should not be present in the submitted (or GT) mmcif
+    # files but ensuring this is the case should be done by validate_ensembles code
     # It appears weights can be applied to an atomgroup object, ie provide rms.RMSF with
     # the argument 'weights="mass"', in similar way to RMSD calc above
     # see: https://docs.mdanalysis.org/stable/documentation_pages/core/groups.html#
@@ -466,31 +501,28 @@ def main(args):
     rmsf_gt = rms.RMSF(gt_u.select_atoms("protein")).run()
     # and for the min-RMSD-aligned pred ensemble
     rmsf_pred = rms.RMSF(pred_u_rmsd_min_aligned.select_atoms("protein")).run()
-    results.ensemble["ensemble_stats"]["gt_rmsf"]=rmsf_gt.results.rmsf.tolist()
-    results.ensemble["ensemble_stats"]["pred_rmsf"]=rmsf_pred.results.rmsf.tolist()
+    results.ensemble["ensemble_stats"][
+        "gt_rmsf"
+    ] = rmsf_gt.results.rmsf.tolist()
+    results.ensemble["ensemble_stats"][
+        "pred_rmsf"
+    ] = rmsf_pred.results.rmsf.tolist()
     # ------------------------------------------------------------------------------------
     # STEP 8 - get LFC
     # make and save LFC plots
-    lfc_all, lfc_stddev, abs_diff_rmsf= calc_lfc(
+    lfc_all, lfc_stddev, abs_diff_rmsf = calc_lfc(
         rmsf_gt.results.rmsf,
         rmsf_pred.results.rmsf,
     )
-    results.ensemble["ensemble_stats"]["lfc"]=lfc_all
-    results.ensemble["ensemble_stats"]["lfc_abs_diff"]=abs_diff_rmsf.tolist()
+    results.ensemble["ensemble_stats"]["lfc"] = lfc_all
+    results.ensemble["ensemble_stats"]["lfc_abs_diff"] = abs_diff_rmsf.tolist()
     if args.verbose:
-        print(
-            "LFC:{}\nLFC_stddev:{}".format(
-                lfc_all, lfc_stddev
-            )
-        )
-    
+        print("LFC:{}\nLFC_stddev:{}".format(lfc_all, lfc_stddev))
+
     # save results dictionary to json
     save_dict_to_json(
         results.__dict__,
-        os.path.join(
-            results.pred_confs_dir_label_results,
-            "rms_metrics.json"
-        )
+        os.path.join(results.pred_confs_dir_label_results, "rms_metrics.json"),
     )
     make_plot_lfc(
         abs_diff_rmsf,
@@ -503,9 +535,12 @@ def main(args):
     )
     # TODO improve error bar plotting style
 
-    # TODO option to also visualise/save rmsf via temp factor in (saved) min-RMSD pred-ensemble mda universe
-    # see https://userguide.mdanalysis.org/stable/examples/analysis/alignment_and_rms/rmsf.html#Visualising-RMSF-as-B-factors
-    # NOTE I have done this previously - example in extract_frames_6xou_unsteered_0-200ns_alignment_metric_tests.ipynb
+    # TODO option to also visualise/save rmsf via temp factor in (saved) min-RMSD
+    # pred-ensemble mda universe
+    # see https://userguide.mdanalysis.org/stable/examples/analysis/alignment_and_rms/
+    # rmsf.html#Visualising-RMSF-as-B-factors
+    # NOTE I have done this previously - example in extract_frames_6xou_unsteered_0-
+    # 200ns_alignment_metric_tests.ipynb
     # (ie: the notebook which showed volume-ensemble-metrics weren't invariant)
 
 
