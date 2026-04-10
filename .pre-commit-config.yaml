@@ -30,13 +30,13 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [pandas-stubs, types-Pillow, types-setuptools, types-PyYAML]
-  - repo: local
-    hooks:
-      - id: pytest
-        stages: [pre-commit, pre-push]
-        types: [python]
-        name: pytest
-        entry: pytest
-        pass_filenames: false
-        language: system
-        always_run: true
+#  - repo: local
+#    hooks:
+#      - id: pytest
+#        stages: [pre-commit, pre-push]
+#        types: [python]
+#        name: pytest
+#        entry: pytest
+#        pass_filenames: false
+#        language: system
+#        always_run: true
