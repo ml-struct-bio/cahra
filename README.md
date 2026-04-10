@@ -15,6 +15,7 @@ conda create -n cahra-internal python=3.14
 conda activate cahra-internal
 git clone git@github.com:ml-struct-bio/cahra-internal.git
 pip install -e .[dev]
+pre-commit install
 ```
 
 ###  Running the conf-het metrics
