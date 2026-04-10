@@ -1,4 +1,5 @@
 # cahra-internal
+
 The Community-Wide Assessment of Cryo-EM Heterogeneous Reconstruction Algorithms (CAHRA)
 
 ## Conformational Heterogeneity Challenge Assessment
@@ -8,6 +9,7 @@ Code for running this via a set of command line tools is included in `src` and s
 The `pre-commit` is set out in `.pre-commit-config.yaml`. Currently `pytest` is manually commented out due to lack of any tests.
 
 ### Installation
+
 Install [miniforge](https://github.com/conda-forge/miniforge?tab=readme-ov-file#unix-like-platforms-macos-linux--wsl)
 
 ```
@@ -17,6 +19,11 @@ git clone git@github.com:ml-struct-bio/cahra-internal.git
 pip install -e .[dev]
 pre-commit install
 ```
+
+### Conf-het metrics CLI
+
+Once pip-installed, command line interface utilities and options available for conf-het can be accessed via:
+`cahra-metrics -h`
 
 ###  Running the conf-het metrics
 
