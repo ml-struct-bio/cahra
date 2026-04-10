@@ -1,4 +1,8 @@
-.. autosummary::
-   :toctree: generated
+CAHRA-Challenge Metrics API Docs
+=====================================
 
-   roodmus
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
+
+   cahra_metrics

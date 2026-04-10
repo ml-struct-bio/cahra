@@ -1,5 +1,5 @@
 CAHRA-Challenge Metrics Docs
-============
+========================================================
 
 This codebase provides a way to run metrics on entries to the 2025 CAHRA Challenge. Specifically, this code is for the conformational heterogeneity challenge dataset.
 
@@ -14,6 +14,6 @@ Contents
 
 .. toctree::
 
-   tutorials
    how-to-guides
+   explanation
    api

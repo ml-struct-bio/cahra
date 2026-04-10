@@ -15,7 +15,7 @@ description = "Metric calculation for CAHRA Challenge, conformational heterogene
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
-keywords = ["roodmus", "cryo-em", "micrographs", "synthetic", "single-particle", "heterogeneity", "reconstruction", "ensemble"]
+keywords = ["cahra", "cryo-em", "micrographs", "synthetic", "single-particle", "heterogeneity", "reconstruction", "ensemble"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -45,6 +45,10 @@ dev = [
     "flake8==7.3.0",
     "mypy==1.20.0",
     "types-tabulate"
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme>=1.2.0"
 ]
 
 [project.scripts]
