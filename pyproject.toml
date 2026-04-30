@@ -72,6 +72,9 @@ max-line-length = 88
 count = true
 
 [[tool.mypy.overrides]]
-module = "mdtraj.*, tabulate.*"
+module = [
+    "mdtraj.*",
+    "tabulate.*"
+]
 ignore_missing_imports = true
 

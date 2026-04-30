@@ -36,7 +36,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-from tabulate import tabulate
+from tabulate import tabulate  # type: ignore
 
 from cahra_metrics.utilities.utils import get_ensemble, save_dict_to_json
 

@@ -393,6 +393,7 @@ def main(args):
     # (to be used as input for min-RMSD metric recalculation or PCV metric calculation)
     # gt_u is self-aligned GT ensemble mda.Universe
     # write xtc
+    # TODO fix writing all conformations to xtc
     gt_u.atoms.write(
         os.path.join(
             results.gt_confs_dir_xtc, "{}.xtc".format(args.pred_ensemble_label)
@@ -425,6 +426,7 @@ def main(args):
     # NOTE: SAVE min-RMSD-aligned pred models to disk in a new directory
     # pred_u_rmsd_min_aligned is min-RMSD aligned pred ensemble mda.Universe
     # write xtc
+    # TODO fix writing all conformations to xtc
     pred_u_rmsd_min_aligned.atoms.write(
         os.path.join(
             results.pred_confs_dir_label_xtc,
