@@ -120,6 +120,8 @@ def calc_cv(u: mda.Universe) -> tuple[list[int], list[float], list[float]]:
     for ts in u.trajectory:
         iteration.append(ts.frame)
         # Make atomgroup for each residue range
+        # NOTE: we arrange according to CV calculated from all atoms
+        # in these residues! Not just the atoms used for the min-RMSD alignment
         d1 = u.select_atoms("resnum 10:265")  # and name CA")
         linker = u.select_atoms("resnum 539:541")  # and name CA")
         d4 = u.select_atoms("resnum 832:1014")  # and name CA")

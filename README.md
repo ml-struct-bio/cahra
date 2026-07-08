@@ -32,19 +32,22 @@ Once pip-installed, command line interface utilities and options available for c
 3. Copy scripts to `prelim_scoring` and run as below:
 ```
 cp conf-het/scripts/*.bash prelim_scoring
+conda activate cahra-internal # if not already active
 pushd prelim_scoring
-convert_ensemblesv2.bash
+bash convert_ensemblesv6.bash
 wait $!
-validate_ensemblesv2.bash
+bash validate_ensemblesv6.bash
 wait $!
-calc_min_rmsd_metricsv2.bash
+bash calc_min_rmsd_metricsv6.bash
 wait $!
-calc_pcv2.bash
+bash calc_pcv6.bash
 wait $!
 popd
 ```
 
-Look at the final table in `prelim_scoring/calc_pcv2.log`
+Look at the final table in `prelim_scoring/calc_pcv6.log`
+
+Metrics calculated (and plots), along with aligned ensembles will be stored in `metric_calculationv6` directory
 
 
 ### Merging of CAHRA-metrics (conf-het) repository into cahra-internal

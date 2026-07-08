@@ -208,3 +208,6 @@ __marimo__/
 
 # sphinx autosummary
 *_autosummary
+
+# Preliminary Scoring directory
+prelim_scoring/*

@@ -54,6 +54,27 @@ def add_arguments(parser: argparse.ArgumentParser):
     """
 
     parser.add_argument(
+        "--selection",
+        "-s",
+        help=(
+            "Atom selection to make for alignment AND min-RMSD calculation."
+            " Models aligned using this min-RMSD alignment selection will be"
+            " used as input for PCV calculation. Defaults to 'protein'"
+        ),
+        type=str,
+        choices=["protein", "backbone", "name CA"],
+        default="protein",
+    )
+
+    parser.add_argument(
+        "--exclude_hist_tag",
+        "-eht",
+        help="Do not include hist-tag in alignment of atomic models and SAC/LFC"
+        " calculation",
+        action="store_true",
+    )
+
+    parser.add_argument(
         "--pred_ensemble_dir",
         "-pe",
         help=(
@@ -125,6 +146,7 @@ def align_min_rmsd(
     pred_traj: mda.Universe,
     GT_traj: mda.Universe,
     pred_traj_copy: mda.Universe,
+    selection: str,
     verbose: bool = False,
 ) -> tuple[dict, mda.Universe]:
 
@@ -150,12 +172,12 @@ def align_min_rmsd(
             rmsd_vals.append(
                 rms.rmsd(
                     pred_traj.select_atoms(
-                        "protein"
+                        selection,
                         # TODO decide on whether to use all (heavy) atoms for
                         # rmsd calculation
                     ).positions,
                     GT_traj.select_atoms(
-                        "protein"
+                        selection,
                     ).positions,  # TODO update as above
                     # ensuring QCP superposition seems to make rms.rmsd and
                     # align.alignto np.close to each other
@@ -188,7 +210,7 @@ def align_min_rmsd(
         rmsd_unaligned, rmsd_aligned = align.alignto(
             pred_traj,
             GT_traj,
-            select="protein",
+            select=selection,
             # NOTE: Aligning using protein assuming H is
             # already removed! Also, not ignoring hist-tag here
         )
@@ -278,8 +300,25 @@ def make_over_under_represent_het_plot(
     plt.clf()
 
 
-def main(args):
+def create_selection_string(
+    select_str: str,
+    include_tag: bool,
+    verbose: bool,
+) -> str:
+    selection = select_str
+    if include_tag:
+        selection = selection + " and resnum 10:1014"
+    if verbose:
+        print("Selection string is: '{}'".format(selection))
+    return selection
 
+
+def main(args):
+    # create atom selection string used for alignment and RMSD/RMSF calc
+    selection = create_selection_string(
+        args.selection,
+        args.exclude_hist_tag,
+    )
     # STEP 1 - load predicted and ground truth ensembles
     # ground truth ensemble
     gt_ensemble = get_ensemble(
@@ -332,7 +371,7 @@ def main(args):
     # itself. This is done below
 
     # align to reference
-    # NOTE: we do NOT remove hist-tag from ground-truth alignment as this
+    # NOTE: we do NOT remove hist-tag from ground-truth alignment by default as this
     # may slightly affect the GT RMSF distribution
     # It does not affect RMSDs calculated between GT and pred confs though
     # This should not affect individual min-RMSD alignments of pred
@@ -343,7 +382,7 @@ def main(args):
     aligner_gt_u = align.AlignTraj(  # noqa: F841
         gt_u,
         gt_u,
-        select="protein",  # and resnum 10:1014',
+        select=selection,  # and resnum 10:1014',
     ).run()
     # NOTE: use in_memory so the alignments persist!!!!!
 
@@ -368,6 +407,7 @@ def main(args):
         pred_u,
         gt_u,
         pred_u_copy,
+        selection=selection,
     )
     if args.verbose:
         for key, val in pred_u_rmsd_min_dict.items():
@@ -500,9 +540,9 @@ def main(args):
     # so here get the RMSF of our aligned GT ensemble for each atom
     # TODO determine option to calc on per-atom basis
     # TODO choose whether to calc per-residue or per-atom RMSF
-    rmsf_gt = rms.RMSF(gt_u.select_atoms("protein")).run()
+    rmsf_gt = rms.RMSF(gt_u.select_atoms(selection)).run()
     # and for the min-RMSD-aligned pred ensemble
-    rmsf_pred = rms.RMSF(pred_u_rmsd_min_aligned.select_atoms("protein")).run()
+    rmsf_pred = rms.RMSF(pred_u_rmsd_min_aligned.select_atoms(selection)).run()
     results.ensemble["ensemble_stats"][
         "gt_rmsf"
     ] = rmsf_gt.results.rmsf.tolist()
