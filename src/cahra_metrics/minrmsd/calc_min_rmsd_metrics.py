@@ -318,6 +318,7 @@ def main(args):
     selection = create_selection_string(
         args.selection,
         args.exclude_hist_tag,
+        args.verbose,
     )
     # STEP 1 - load predicted and ground truth ensembles
     # ground truth ensemble
