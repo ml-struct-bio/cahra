@@ -1,7 +1,8 @@
 #!/usr/bin/bash
+METRICS_LABEL="_v6"
 
-LOG_DIR="calc_pcv_v6"
-OUTPUT_DIR="metric_calculationv6"
+LOG_DIR="calc_pcv${METRICS_LABEL}"
+OUTPUT_DIR="metric_calculation${METRICS_LABEL}"
 
 TRUTH_ENSEMBLE_DIR="${OUTPUT_DIR}/gt_confs/pdbs"
 MAX_RANK=100 # updated from 50 to 100 from v4 and up
@@ -42,4 +43,4 @@ banana2_label="banana2"
 cahra-metrics calc_pcv -v -r $MAX_RANK -te $TRUTH_ENSEMBLE_DIR \
 -pe $lemon1_dir $lemon2_dir $lemon3_dir $lime1_dir $lime2_dir $orange1_dir $orange2_dir $kiwi1_dir $kiwi2_dir $kiwi3_dir $kiwi4_dir $kiwi5_dir $banana1_dir $banana2_dir \
 -pl $lemon1_label $lemon2_label $lemon3_label $lime1_label $lime2_label $orange1_label $orange2_label $kiwi1_label $kiwi2_label $kiwi3_label $kiwi4_label $kiwi5_label $banana1_label $banana2_label \
-> $LOG_DIR/calc_pcv6.log 2>&1 &
+> $LOG_DIR/calc_pcv${METRICS_LABEL}.log 2>&1 &

@@ -1,10 +1,13 @@
 #!/usr/bin/bash
-LOG_DIR="calc_min_rmsd_metrics_v6"
+METRICS_LABEL="_v6"
+
+LOG_DIR="calc_min_rmsd_metrics${METRICS_LABEL}"
 TRUTH_ENSEMBLE_DIR="extract_frames_6xou_unsteered_0-200ns_pdb"
 EXT="pdb"
-OUTPUT_DIR="metric_calculationv6"
+OUTPUT_DIR="metric_calculation${METRICS_LABEL}"
 
 mkdir $LOG_DIR
+mkdir $OUTPUT_DIR
 
 label="lemon1"
 pred_ensemble_dir="prelim_submissions/${label}/confs_pdb"
