@@ -28,6 +28,7 @@ dependencies = [
     "glob2",
     "pandas",
     "matplotlib",
+    "scipy",
     "MDAnalysis",
     "natsort",
     "tabulate",

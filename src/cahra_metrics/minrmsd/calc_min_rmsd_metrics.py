@@ -33,6 +33,7 @@ import os
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.stats
 import MDAnalysis as mda
 from MDAnalysis.analysis import align, rms
 from cahra_metrics.utilities.utils import (
@@ -300,6 +301,52 @@ def make_over_under_represent_het_plot(
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, "rmsf_diff.png"), dpi=300)
     plt.savefig(os.path.join(plot_dir, "rmsf_diff.pdf"))
+    plt.clf()
+
+
+def make_plot_rmsd_min(rmsd_min_vals, plot_dir: str):
+    """Plot a histogram of the per-conformation min-RMSD values with a KDE overlay.
+
+    Shows the distribution of how well each predicted conformation matches the
+    ground-truth ensemble, complementing the single SAC (mean) value.
+
+    Args:
+        rmsd_min_vals: Array-like of min-RMSD values (in Angstroms) for each
+            predicted conformation.
+        plot_dir (str): Directory to save the plot in.
+    """
+    rmsd_min_arr = np.asarray(rmsd_min_vals, dtype=float)
+    # histogram
+    plt.hist(
+        rmsd_min_arr,
+        bins="auto",
+        density=True,
+        alpha=0.6,
+        color="steelblue",
+        label="Histogram",
+    )
+    # KDE overlay
+    kde = scipy.stats.gaussian_kde(rmsd_min_arr)
+    x_vals = np.linspace(rmsd_min_arr.min(), rmsd_min_arr.max(), 200)
+    plt.plot(
+        x_vals,
+        kde(x_vals),
+        color="black",
+        label="KDE",
+    )
+    # vertical line at the mean (= SAC)
+    plt.axvline(
+        np.mean(rmsd_min_arr),
+        color="red",
+        linestyle="--",
+        label="Mean (SAC) = {:.2f} $\\AA$".format(np.mean(rmsd_min_arr)),
+    )
+    plt.xlabel("Min-RMSD to GT ($\\AA$)")
+    plt.ylabel("Density")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsd_min.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsd_min.pdf"))
     plt.clf()
 
 
@@ -602,6 +649,13 @@ def main(args):
     make_over_under_represent_het_plot(
         rmsf_gt.results.rmsf,
         rmsf_pred.results.rmsf,
+        results.pred_confs_dir_label_figures,
+    )
+    make_plot_rmsd_min(
+        extract_min_rmsd_values(
+            pred_u_rmsd_min_dict["rmsds"],
+            pred_u_rmsd_min_dict["gt_index"],
+        ),
         results.pred_confs_dir_label_figures,
     )
     # TODO improve error bar plotting style
