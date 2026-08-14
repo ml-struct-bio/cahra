@@ -186,14 +186,14 @@ def align_min_rmsd(
             )
         rmsd_vals_arr: np.ndarray[tuple] = np.array(rmsd_vals, dtype=float)
         min_index = np.argmin(rmsd_vals_arr)
-        # TODO: decide whether to also store pairwise min-rmsds to dictionary.
-        # May be useful for later analyses when rmsd_min dict is saved to file?
+        # NOTE: We store pairwise min-rmsds in rmsds array to dictionary.
+        # May be useful for later analyses.
         # Casting to int/float as numpy dtypes not save-able as json.
         rmsd_min["pred_index"].append(int(i))
         # save the rmsd_min array and use gt_index (ie: min_index) to recover min-RMSD
         # for each pred conformation. This is useful for later analyses when
         # rmsd_min_dict is saved to file
-        rmsd_min["rmsds"].append(float(rmsd_vals_arr))
+        rmsd_min["rmsds"].append(rmsd_vals_arr.astype(float).tolist())
         rmsd_min["gt_index"].append(int(min_index))
 
     # now that we have the indices of the best rmsd fit for each pred_traj
