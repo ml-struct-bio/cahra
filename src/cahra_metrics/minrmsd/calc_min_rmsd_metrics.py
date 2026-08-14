@@ -153,7 +153,7 @@ def align_min_rmsd(
     # loop through each predicted structure and find GT structure with min RMSD
     rmsd_min: dict = {}
     rmsd_min["pred_index"] = []
-    rmsd_min["rmsd_min"] = []
+    rmsd_min["rmsds"] = []
     rmsd_min["gt_index"] = []
     # pred_traj_aligned is not yet aligned and is at this point just a copy of pred_traj
     for i, pred in enumerate(
@@ -190,16 +190,19 @@ def align_min_rmsd(
         # May be useful for later analyses when rmsd_min dict is saved to file?
         # Casting to int/float as numpy dtypes not save-able as json.
         rmsd_min["pred_index"].append(int(i))
-        rmsd_min["rmsd_min"].append(float(rmsd_vals_arr[min_index]))
+        # save the rmsd_min array and use gt_index (ie: min_index) to recover min-RMSD
+        # for each pred conformation. This is useful for later analyses when
+        # rmsd_min_dict is saved to file
+        rmsd_min["rmsds"].append(float(rmsd_vals_arr))
         rmsd_min["gt_index"].append(int(min_index))
 
     # now that we have the indices of the best rmsd fit for each pred_traj
     # we now align them in the copied pred_traj
     # and fill in the new atomic positions
-    for pred_idx, gt_idx, rmsd_min_val in zip(
+    for pred_idx, gt_idx, rmsds in zip(
         rmsd_min["pred_index"],
         rmsd_min["gt_index"],
-        rmsd_min["rmsd_min"],
+        rmsd_min["rmsds"],
     ):
         # change the frame of the pred_traj and pred_traj_copy to correct idx
         pred_traj.trajectory[pred_idx]
@@ -212,7 +215,7 @@ def align_min_rmsd(
             GT_traj,
             select=selection,
             # NOTE: Aligning using protein assuming H is
-            # already removed! Also, not ignoring hist-tag here
+            # already removed!
         )
         if verbose:
             print(
@@ -224,9 +227,9 @@ def align_min_rmsd(
             )
         # check the alignment is approx the same as reported by rms.rmsd above
         assert np.isclose(
-            rmsd_min_val,
+            rmsds[gt_idx],
             rmsd_aligned,
-        ), "rmsd_min:{}\nrmsd_aligned:{}".format(rmsd_min_val, rmsd_aligned)
+        ), "rmsd_min:{}\nrmsd_aligned:{}".format(rmsds[gt_idx], rmsd_aligned)
 
         # input aligned atomic positions to copy of pred_traj
         # Have to do here because pred_traj will reset to unaligned after
@@ -311,6 +314,23 @@ def create_selection_string(
     if verbose:
         print("Selection string is: '{}'".format(selection))
     return selection
+
+
+def extract_min_rmsd_values(rmsds: list[list[float]], gt_indices: list[int]):
+    """Take list of all RMSD values for each predicted conformation and the index of
+     the GT conformation with the minimum RMSD for each predicted conformation, and
+     return a list of the minimum RMSD values.
+
+    Args:
+        rmsds (list[list[float]]): List of lists of RMSD values for each
+        predicted conformation against all GT conformations.
+        gt_indices (list[int]): List of indices for the GT conformation
+        with the minimum RMSD for each predicted conformation.
+
+    Returns:
+        np.ndarray: Array of minimum RMSD values for each predicted conformation.
+    """
+    return np.array([rmsds[i][j] for i, j in enumerate(gt_indices)])
 
 
 def main(args):
@@ -516,7 +536,15 @@ def main(args):
 
     # ------------------------------------------------------------------------------------
     # STEP 6 - get SAC
-    SAC = np.average(np.array(pred_u_rmsd_min_dict["rmsd_min"]))
+
+    SAC = float(
+        np.average(
+            extract_min_rmsd_values(
+                pred_u_rmsd_min_dict["rmsds"],
+                pred_u_rmsd_min_dict["gt_index"],
+            )
+        )
+    )
     results.ensemble["ensemble_stats"]["sac"] = SAC
     print("SAC: {}".format(SAC))
     # TODO Save pred_u_rmsd_min_dict and SAC/LFC values to file (use dict for latter?)

@@ -211,3 +211,6 @@ __marimo__/
 
 # Preliminary Scoring directory
 prelim_scoring/*
+
+# Agentic planning notes directory
+planning_references/*

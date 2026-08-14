@@ -55,7 +55,11 @@ class Ensemble_Stats(object):
 
         # CONF_STATS
         # "conf_stats" dict - holds per conformation statistics/information
-        # keys: pred_index: list, pred_filename: list, rmsd_min: list, gt_index: list]
+        # keys:
+        # pred_index: list[int],
+        # pred_filename: list[str],
+        # rmsds: list[list[float]],
+        # gt_index: list[int]
 
         # ENSEMBLE_STATS
         # "ensemble_stats" dict - holds per ensemble statistics/information
