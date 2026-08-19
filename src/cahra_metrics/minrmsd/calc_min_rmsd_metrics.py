@@ -315,6 +315,7 @@ def make_plot_rmsd_min(rmsd_min_vals, plot_dir: str):
             predicted conformation.
         plot_dir (str): Directory to save the plot in.
     """
+    # TODO improve error bar plotting style
     rmsd_min_arr = np.asarray(rmsd_min_vals, dtype=float)
     # histogram
     plt.hist(
@@ -347,6 +348,50 @@ def make_plot_rmsd_min(rmsd_min_vals, plot_dir: str):
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, "rmsd_min.png"), dpi=300)
     plt.savefig(os.path.join(plot_dir, "rmsd_min.pdf"))
+    plt.clf()
+
+
+def make_plot_rmsd_min_ecdf(rmsd_min_vals, plot_dir: str):
+    """Plot the empirical cumulative distribution function (ECDF) of min-RMSD.
+
+    Shows the fraction of predicted conformations whose min-RMSD to the
+    ground-truth ensemble is at or below a given value, complementing the
+    single SAC (mean) value and the A1 histogram/KDE plot.
+
+    Args:
+        rmsd_min_vals: Array-like of min-RMSD values (in Angstroms) for each
+            predicted conformation.
+        plot_dir (str): Directory to save the plot in.
+    """
+    rmsd_min_arr = np.asarray(rmsd_min_vals, dtype=float)
+    sorted_vals = np.sort(rmsd_min_arr)
+    # ECDF: fraction of values <= x, as a step function
+    y_vals = np.arange(1, len(sorted_vals) + 1) / len(sorted_vals)
+    plt.step(
+        sorted_vals, y_vals, where="post", color="steelblue", label="ECDF"
+    )
+    # reference lines at the median and the mean (= SAC)
+    median = np.median(rmsd_min_arr)
+    mean = np.mean(rmsd_min_arr)
+    plt.axvline(
+        median,
+        color="green",
+        linestyle="--",
+        label="Median = {:.2f} $\\AA$".format(median),
+    )
+    plt.axvline(
+        mean,
+        color="red",
+        linestyle="--",
+        label="Mean (SAC) = {:.2f} $\\AA$".format(mean),
+    )
+    plt.xlabel("Min-RMSD to GT ($\\AA$)")
+    plt.ylabel("Fraction of conformations $\\leq$ value")
+    plt.ylim(0, 1.05)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsd_min_ecdf.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsd_min_ecdf.pdf"))
     plt.clf()
 
 
@@ -658,7 +703,13 @@ def main(args):
         ),
         results.pred_confs_dir_label_figures,
     )
-    # TODO improve error bar plotting style
+    make_plot_rmsd_min_ecdf(
+        extract_min_rmsd_values(
+            pred_u_rmsd_min_dict["rmsds"],
+            pred_u_rmsd_min_dict["gt_index"],
+        ),
+        results.pred_confs_dir_label_figures,
+    )
 
     # TODO option to also visualise/save rmsf via temp factor in (saved) min-RMSD
     # pred-ensemble mda universe
