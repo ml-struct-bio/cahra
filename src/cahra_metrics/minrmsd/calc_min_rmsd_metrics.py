@@ -412,30 +412,43 @@ def make_plot_rmsd_min_box_violin(rmsd_min_vals, plot_dir: str):
         plot_dir (str): Directory to save the plot in.
     """
     rmsd_min_arr = np.asarray(rmsd_min_vals, dtype=float)
+    """
+    The KDE used in the violin plots is poor and does not represent the 
+    distribution well. The violin plot is not very informative and is not
+    used in the final report.
     # violin plot (kernel density estimate of the distribution)
     parts = plt.violinplot(
         rmsd_min_arr,
         positions=[1],
-        showmeans=False,
-        showmedians=False,
-        showextrema=False,
+        showmeans=True,
+        showmedians=True,
+        showextrema=True,
+        bw_method="silverman",
     )
     for body in parts["bodies"]:
         body.set_facecolor("steelblue")
         body.set_alpha(0.6)
         body.set_edgecolor("black")
-    # overlaid box plot (median, quartiles, whiskers, outliers)
+    """
+    # box plot (median, quartiles, whiskers, outliers)
     plt.boxplot(
         rmsd_min_arr,
         positions=[1],
         widths=0.15,
         patch_artist=True,
-        boxprops=dict(facecolor="white", edgecolor="black"),
-        medianprops=dict(color="red", linewidth=2),
+        showmeans=True,
+        meanline=True,
+        showfliers=True,
+        showbox=True,
+        showcaps=True,
+        boxprops=dict(facecolor="steelblue", edgecolor="black"),
+        meanprops=dict(color="red", linewidth=2, linestyle="-", label="Mean"),
+        medianprops=dict(color="blue", linewidth=2, linestyle="-", label="Median"),
         whiskerprops=dict(color="black"),
         capprops=dict(color="black"),
-        flierprops=dict(marker="o", markerfacecolor="black", markersize=4),
+        flierprops=dict(marker="x", markerfacecolor="black", markersize=2, label="Outliers"),
     )
+    """
     # horizontal line at the mean (= SAC)
     mean = np.mean(rmsd_min_arr)
     plt.axhline(
@@ -444,6 +457,14 @@ def make_plot_rmsd_min_box_violin(rmsd_min_vals, plot_dir: str):
         linestyle="--",
         label="Mean (SAC) = {:.2f} $\\AA$".format(mean),
     )
+    median = np.median(rmsd_min_arr)
+    plt.axhline(
+        median,
+        color="blue",
+        linestyle="--",
+        label="Median (SAC) = {:.2f} $\\AA$".format(median),
+    )
+    """
     plt.xlabel("Predicted ensemble")
     plt.ylabel("Min-RMSD to GT ($\\AA$)")
     plt.xticks([1], ["Pred"])
