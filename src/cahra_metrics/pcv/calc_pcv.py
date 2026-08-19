@@ -275,6 +275,8 @@ def make_plot_rmsd_violin(labels, rmsd_min_lists, plot_dir: str):
             (in Angstroms) for each predicted ensemble.
         plot_dir (str): Directory to save the plot in.
     """
+    # create a fresh figure sized for the number of datasets
+    plt.figure(figsize=(max(8, 0.8 * len(labels)), 6))
     # violin plot of the min-RMSD distribution for each dataset
     parts = plt.violinplot(
         rmsd_min_lists,
