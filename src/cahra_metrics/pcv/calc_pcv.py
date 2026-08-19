@@ -310,6 +310,14 @@ def make_plot_rmsd_violin(labels, rmsd_min_lists, plot_dir: str):
     # grid with both major and minor ticks
     plt.grid(True, which="major", linestyle="--", alpha=0.5, axis="y")
     plt.grid(True, which="minor", linestyle=":", alpha=0.3, axis="y")
+    # add legend for mean and median
+    plt.legend(
+        handles=[
+            plt.Line2D([0], [0], color="blue", linewidth=2, label="Mean"),
+            plt.Line2D([0], [0], color="red", linewidth=2, label="Median"),
+        ],
+        loc="upper right",
+    )
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, "rmsd_min_violin.png"), dpi=300)
     plt.savefig(os.path.join(plot_dir, "rmsd_min_violin.pdf"))
