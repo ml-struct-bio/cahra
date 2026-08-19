@@ -388,6 +388,9 @@ def make_plot_rmsd_min_ecdf(rmsd_min_vals, plot_dir: str):
     plt.xlabel("Min-RMSD to GT ($\\AA$)")
     plt.ylabel("Fraction of conformations $\\leq$ value")
     plt.ylim(0, 1.05)
+    # grid with both major and minor ticks
+    plt.grid(True, which="major", linestyle="--", alpha=0.5)
+    plt.grid(True, which="minor", linestyle=":", alpha=0.3)
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, "rmsd_min_ecdf.png"), dpi=300)
