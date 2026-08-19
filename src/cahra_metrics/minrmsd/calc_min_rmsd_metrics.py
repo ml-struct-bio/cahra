@@ -398,6 +398,65 @@ def make_plot_rmsd_min_ecdf(rmsd_min_vals, plot_dir: str):
     plt.clf()
 
 
+def make_plot_rmsd_min_box_violin(rmsd_min_vals, plot_dir: str):
+    """Plot a box-and-violin summary of the per-conformation min-RMSD values.
+
+    Shows the distribution of how well each predicted conformation matches the
+    ground-truth ensemble as a violin (kernel density) with an overlaid box
+    plot (median, quartiles, whiskers, outliers), complementing the A1
+    histogram/KDE and A2 ECDF plots.
+
+    Args:
+        rmsd_min_vals: Array-like of min-RMSD values (in Angstroms) for each
+            predicted conformation.
+        plot_dir (str): Directory to save the plot in.
+    """
+    rmsd_min_arr = np.asarray(rmsd_min_vals, dtype=float)
+    # violin plot (kernel density estimate of the distribution)
+    parts = plt.violinplot(
+        rmsd_min_arr,
+        positions=[1],
+        showmeans=False,
+        showmedians=False,
+        showextrema=False,
+    )
+    for body in parts["bodies"]:
+        body.set_facecolor("steelblue")
+        body.set_alpha(0.6)
+        body.set_edgecolor("black")
+    # overlaid box plot (median, quartiles, whiskers, outliers)
+    plt.boxplot(
+        rmsd_min_arr,
+        positions=[1],
+        widths=0.15,
+        patch_artist=True,
+        boxprops=dict(facecolor="white", edgecolor="black"),
+        medianprops=dict(color="red", linewidth=2),
+        whiskerprops=dict(color="black"),
+        capprops=dict(color="black"),
+        flierprops=dict(marker="o", markerfacecolor="black", markersize=4),
+    )
+    # horizontal line at the mean (= SAC)
+    mean = np.mean(rmsd_min_arr)
+    plt.axhline(
+        mean,
+        color="red",
+        linestyle="--",
+        label="Mean (SAC) = {:.2f} $\\AA$".format(mean),
+    )
+    plt.xlabel("Predicted ensemble")
+    plt.ylabel("Min-RMSD to GT ($\\AA$)")
+    plt.xticks([1], ["Pred"])
+    # grid with both major and minor ticks
+    plt.grid(True, which="major", linestyle="--", alpha=0.5, axis="y")
+    plt.grid(True, which="minor", linestyle=":", alpha=0.3, axis="y")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsd_min_box_violin.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsd_min_box_violin.pdf"))
+    plt.clf()
+
+
 def create_selection_string(
     select_str: str,
     include_tag: bool,
@@ -707,6 +766,13 @@ def main(args):
         results.pred_confs_dir_label_figures,
     )
     make_plot_rmsd_min_ecdf(
+        extract_min_rmsd_values(
+            pred_u_rmsd_min_dict["rmsds"],
+            pred_u_rmsd_min_dict["gt_index"],
+        ),
+        results.pred_confs_dir_label_figures,
+    )
+    make_plot_rmsd_min_box_violin(
         extract_min_rmsd_values(
             pred_u_rmsd_min_dict["rmsds"],
             pred_u_rmsd_min_dict["gt_index"],
