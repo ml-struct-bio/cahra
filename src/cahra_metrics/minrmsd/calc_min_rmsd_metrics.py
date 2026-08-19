@@ -483,6 +483,122 @@ def make_plot_rmsd_min_box_violin(rmsd_min_vals, plot_dir: str):
     plt.clf()
 
 
+def make_plot_assignment(gt_index, plot_dir: str):
+    """Plot which GT conformation each predicted conformation is assigned to.
+
+    Each predicted conformation is assigned to the GT conformation with the
+    minimum RMSD (the ``gt_index``). This plot shows that assignment as a
+    scatter of predicted-conformation index against assigned GT-conformation
+    index, so it is easy to see how the predicted conformations map onto the
+    ground-truth ensemble.
+
+    Args:
+        gt_index: Array-like of GT-conformation indices (one per predicted
+            conformation).
+        plot_dir (str): Directory to save the plot in.
+    """
+    gt_index_arr = np.asarray(gt_index, dtype=int)
+    pred_index = np.arange(len(gt_index_arr))
+    plt.scatter(
+        pred_index,
+        gt_index_arr,
+        color="steelblue",
+        s=20,
+        alpha=0.7,
+        edgecolor="black",
+        linewidth=0.5,
+    )
+    plt.xlabel("Predicted conformation index")
+    plt.ylabel("Assigned GT conformation index")
+    # grid with both major and minor ticks
+    plt.grid(True, which="major", linestyle="--", alpha=0.5)
+    plt.grid(True, which="minor", linestyle=":", alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "assignment.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "assignment.pdf"))
+    plt.clf()
+
+
+def make_plot_occupancy(gt_index, plot_dir: str):
+    """Plot how many predicted conformations occupy each GT conformation.
+
+    Counts how many predicted conformations are assigned to each GT
+    conformation (via ``gt_index``) and plots this as a histogram, so it is
+    easy to see which GT conformations are well-sampled by the predicted
+    ensemble and which are not sampled at all.
+
+    Args:
+        gt_index: Array-like of GT-conformation indices (one per predicted
+            conformation).
+        plot_dir (str): Directory to save the plot in.
+    """
+    gt_index_arr = np.asarray(gt_index, dtype=int)
+    n_gt = gt_index_arr.max() + 1
+    counts = np.bincount(gt_index_arr, minlength=n_gt)
+    plt.bar(
+        np.arange(n_gt),
+        counts,
+        color="steelblue",
+        edgecolor="black",
+        linewidth=0.5,
+    )
+    plt.xlabel("GT conformation index")
+    plt.ylabel("Number of predicted conformations")
+    # grid with both major and minor ticks
+    plt.grid(True, which="major", linestyle="--", alpha=0.5, axis="y")
+    plt.grid(True, which="minor", linestyle=":", alpha=0.3, axis="y")
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "occupancy.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "occupancy.pdf"))
+    plt.clf()
+
+
+def make_plot_coverage(gt_index, plot_dir: str):
+    """Plot the cumulative coverage of the GT ensemble by the predicted one.
+
+    Shows, as a function of the number of GT conformations considered, the
+    fraction of GT conformations that have at least one predicted conformation
+    assigned to them. A steep curve that reaches 1.0 quickly means the
+    predicted ensemble covers the GT ensemble well.
+
+    Args:
+        gt_index: Array-like of GT-conformation indices (one per predicted
+            conformation).
+        plot_dir (str): Directory to save the plot in.
+    """
+    gt_index_arr = np.asarray(gt_index, dtype=int)
+    n_gt = gt_index_arr.max() + 1
+    # unique GT conformations that have at least one predicted conformation
+    covered = np.unique(gt_index_arr)
+    # cumulative fraction of GT conformations covered as we consider more of
+    # the GT ensemble (ordered by GT index)
+    covered_set = set(covered.tolist())
+    cumulative = np.array(
+        [
+            sum(1 for j in range(i + 1) if j in covered_set) / n_gt
+            for i in range(n_gt)
+        ]
+    )
+    plt.plot(
+        np.arange(n_gt),
+        cumulative,
+        color="steelblue",
+        linewidth=2,
+        marker="o",
+        markersize=3,
+    )
+    plt.xlabel("Number of GT conformations considered")
+    plt.ylabel("Fraction of GT conformations covered")
+    plt.ylim(0, 1.05)
+    # grid with both major and minor ticks
+    plt.grid(True, which="major", linestyle="--", alpha=0.5)
+    plt.grid(True, which="minor", linestyle=":", alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "coverage.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "coverage.pdf"))
+    plt.clf()
+
+
 def create_selection_string(
     select_str: str,
     include_tag: bool,
@@ -786,6 +902,18 @@ def main(args):
             pred_u_rmsd_min_dict["rmsds"],
             pred_u_rmsd_min_dict["gt_index"],
         ),
+        results.pred_confs_dir_label_figures,
+    )
+    make_plot_assignment(
+        pred_u_rmsd_min_dict["gt_index"],
+        results.pred_confs_dir_label_figures,
+    )
+    make_plot_occupancy(
+        pred_u_rmsd_min_dict["gt_index"],
+        results.pred_confs_dir_label_figures,
+    )
+    make_plot_coverage(
+        pred_u_rmsd_min_dict["gt_index"],
         results.pred_confs_dir_label_figures,
     )
 
