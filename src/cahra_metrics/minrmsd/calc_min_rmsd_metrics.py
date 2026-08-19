@@ -41,6 +41,7 @@ from cahra_metrics.utilities.utils import (
     replace_file_ext,
     Ensemble_Stats,
     save_dict_to_json,
+    extract_min_rmsd_values,
 )
 
 
@@ -413,7 +414,7 @@ def make_plot_rmsd_min_box_violin(rmsd_min_vals, plot_dir: str):
     """
     rmsd_min_arr = np.asarray(rmsd_min_vals, dtype=float)
     """
-    The KDE used in the violin plots is poor and does not represent the 
+    The KDE used in the violin plots is poor and does not represent the
     distribution well. The violin plot is not very informative and is not
     used in the final report.
     # violin plot (kernel density estimate of the distribution)
@@ -443,10 +444,14 @@ def make_plot_rmsd_min_box_violin(rmsd_min_vals, plot_dir: str):
         showcaps=True,
         boxprops=dict(facecolor="steelblue", edgecolor="black"),
         meanprops=dict(color="red", linewidth=2, linestyle="-", label="Mean"),
-        medianprops=dict(color="blue", linewidth=2, linestyle="-", label="Median"),
+        medianprops=dict(
+            color="blue", linewidth=2, linestyle="-", label="Median"
+        ),
         whiskerprops=dict(color="black"),
         capprops=dict(color="black"),
-        flierprops=dict(marker="x", markerfacecolor="black", markersize=2, label="Outliers"),
+        flierprops=dict(
+            marker="x", markerfacecolor="black", markersize=2, label="Outliers"
+        ),
     )
     """
     # horizontal line at the mean (= SAC)
@@ -489,23 +494,6 @@ def create_selection_string(
     if verbose:
         print("Selection string is: '{}'".format(selection))
     return selection
-
-
-def extract_min_rmsd_values(rmsds: list[list[float]], gt_indices: list[int]):
-    """Take list of all RMSD values for each predicted conformation and the index of
-     the GT conformation with the minimum RMSD for each predicted conformation, and
-     return a list of the minimum RMSD values.
-
-    Args:
-        rmsds (list[list[float]]): List of lists of RMSD values for each
-        predicted conformation against all GT conformations.
-        gt_indices (list[int]): List of indices for the GT conformation
-        with the minimum RMSD for each predicted conformation.
-
-    Returns:
-        np.ndarray: Array of minimum RMSD values for each predicted conformation.
-    """
-    return np.array([rmsds[i][j] for i, j in enumerate(gt_indices)])
 
 
 def main(args):

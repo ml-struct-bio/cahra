@@ -38,7 +38,11 @@ import matplotlib.pyplot as plt
 import random
 from tabulate import tabulate  # type: ignore
 
-from cahra_metrics.utilities.utils import get_ensemble, save_dict_to_json
+from cahra_metrics.utilities.utils import (
+    get_ensemble,
+    save_dict_to_json,
+    extract_min_rmsd_values,
+)
 
 # ensure reproducibility
 # see https://docs.pytorch.org/docs/stable/notes/randomness.html
@@ -255,6 +259,59 @@ def prepare_trajectory_for_pca(path_to_pdbs, filename_prefix, topology, verbose=
     )
     return models_as_numpy
 """
+
+
+def make_plot_rmsd_violin(labels, rmsd_min_lists, plot_dir: str):
+    """Plot a violin plot of the per-conformation min-RMSD for each dataset.
+
+    Shows the distribution of min-RMSD values for each predicted ensemble
+    (one violin per dataset), so the spread of how well each predicted
+    conformation matches the ground-truth ensemble can be compared across
+    all submissions.
+
+    Args:
+        labels (list[str]): Dataset labels, one per predicted ensemble.
+        rmsd_min_lists (list[list[float]]): Per-conformation min-RMSD values
+            (in Angstroms) for each predicted ensemble.
+        plot_dir (str): Directory to save the plot in.
+    """
+    # violin plot of the min-RMSD distribution for each dataset
+    parts = plt.violinplot(
+        rmsd_min_lists,
+        positions=np.arange(len(labels)),
+        showmeans=False,
+        showmedians=False,
+        showextrema=False,
+    )
+    for body in parts["bodies"]:
+        body.set_facecolor("steelblue")
+        body.set_alpha(0.6)
+        body.set_edgecolor("black")
+    # overlaid box plot (median, mean, quartiles, whiskers, outliers) per dataset
+    plt.boxplot(
+        rmsd_min_lists,
+        positions=np.arange(len(labels)),
+        widths=0.15,
+        patch_artist=True,
+        showmeans=True,
+        meanline=True,
+        meanprops=dict(color="blue", linewidth=2, label="Mean"),
+        boxprops=dict(facecolor="white", edgecolor="black"),
+        medianprops=dict(color="red", linewidth=2, label="Median"),
+        whiskerprops=dict(color="black"),
+        capprops=dict(color="black"),
+        flierprops=dict(marker="x", markerfacecolor="black", markersize=2),
+    )
+    plt.xticks(np.arange(len(labels)), labels, rotation=45, ha="right")
+    plt.xlabel("Predicted ensemble")
+    plt.ylabel("Min-RMSD to GT ($\\AA$)")
+    # grid with both major and minor ticks
+    plt.grid(True, which="major", linestyle="--", alpha=0.5, axis="y")
+    plt.grid(True, which="minor", linestyle=":", alpha=0.3, axis="y")
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsd_min_violin.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsd_min_violin.pdf"))
+    plt.clf()
 
 
 def main(args):
@@ -523,6 +580,69 @@ def main(args):
             headers="firstrow",
             tablefmt="fancy_grid",
         )
+    )
+
+    # STEP 7 - violin plot of the min-RMSD distribution for each dataset
+    # collect the per-pred-conformation min-RMSD values for each dataset
+    rmsd_min_lists = []
+    for label, pred_ensemble_dir in zip(
+        args.pred_ensemble_label, args.pred_ensemble_dir
+    ):
+        json_file = os.path.join(
+            os.path.dirname(os.path.dirname(pred_ensemble_dir)),
+            label,
+            "results",
+            "all_metrics.json",
+        )
+        with open(json_file, "r") as f:
+            results = json.load(f)
+            conf_stats = results["ensemble"]["conf_stats"]
+
+            # check dict entry (list) present for min-RMSD values
+            if "rmsds" in conf_stats:
+                if isinstance(conf_stats["rmsds"], list):
+                    # grab the list of lists of RMSD values for each predicted
+                    # conformation
+                    rmsds = conf_stats["rmsds"]
+                else:
+                    raise ValueError(
+                        "Expected 'rmsds' key in conf_stats for {} to be a list of\
+                         lists of floats".format(
+                            label
+                        )
+                    )
+            else:
+                raise ValueError(
+                    "No 'rmsds' key found in conf_stats for {}".format(label)
+                )
+            if "gt_index" in conf_stats:
+                if isinstance(conf_stats["gt_index"], list):
+                    # grab the list of ground-truth indices for each predicted
+                    # conformation
+                    gt_indices = conf_stats["gt_index"]
+                else:
+                    raise ValueError(
+                        "Expected 'gt_index' key in conf_stats for {} to be a list\
+                         of ints".format(
+                            label
+                        )
+                    )
+            else:
+                raise ValueError(
+                    "No 'gt_index' key found in conf_stats for {}".format(
+                        label
+                    )
+                )
+
+            # get the min-RMSD values for each predicted conformation
+            min_rmsd_values = extract_min_rmsd_values(rmsds, gt_indices)
+            # append to the list of lists for plotting
+            rmsd_min_lists.append(min_rmsd_values)
+
+    make_plot_rmsd_violin(
+        args.pred_ensemble_label,
+        rmsd_min_lists,
+        pred_confs_dir,
     )
     return
 

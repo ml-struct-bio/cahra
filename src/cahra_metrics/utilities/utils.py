@@ -33,6 +33,7 @@ import re
 import glob
 import json
 from natsort import natsorted
+import numpy as np
 
 
 class Ensemble_Stats(object):
@@ -198,3 +199,20 @@ def save_dict_to_json(dictionary: dict, json_file: str, indent: int = 4):
 
 # def load_dict_from_json(json_file: str):
 #     return json.load(json_file)
+
+
+def extract_min_rmsd_values(rmsds: list[list[float]], gt_indices: list[int]):
+    """Take list of all RMSD values for each predicted conformation and the index of
+     the GT conformation with the minimum RMSD for each predicted conformation, and
+     return a list of the minimum RMSD values.
+
+    Args:
+        rmsds (list[list[float]]): List of lists of RMSD values for each
+        predicted conformation against all GT conformations.
+        gt_indices (list[int]): List of indices for the GT conformation
+        with the minimum RMSD for each predicted conformation.
+
+    Returns:
+        np.ndarray: Array of minimum RMSD values for each predicted conformation.
+    """
+    return np.array([rmsds[i][j] for i, j in enumerate(gt_indices)])
