@@ -488,26 +488,39 @@ def make_plot_assignment(gt_index: int, p_index: int, plot_dir: str):
     """Plot which GT conformation each predicted conformation is assigned to.
 
     Each predicted conformation is assigned to the GT conformation with the
-    minimum RMSD (the ``gt_index``). This plot shows that assignment as a
-    scatter of predicted-conformation index against assigned GT-conformation
-    index, so it is easy to see how the predicted conformations map onto the
-    ground-truth ensemble.
+    minimum RMSD (the ``gt_index``). This plot shows that assignment as a 2D
+    histogram of predicted-conformation index against assigned GT-conformation
+    index, where each bin has value 1 if at least one predicted conformation
+    falls in it and 0 otherwise. This makes it easy to see how the predicted
+    conformations map onto the ground-truth ensemble.
 
     Args:
         gt_index: Array-like of GT-conformation indices (one per predicted
+            conformation).
+        p_index: Array-like of predicted-conformation indices (one per predicted
             conformation).
         plot_dir (str): Directory to save the plot in.
     """
     gt_index_arr = np.asarray(gt_index, dtype=int)
     pred_index = np.asarray(p_index, dtype=int)
-    plt.scatter(
+    n_pred = len(pred_index)
+    n_gt = len(gt_index_arr)
+    # 2D histogram of (pred, gt) assignments; each bin is 1 if it has an entry
+    # and 0 otherwise
+    counts, _, _ = np.histogram2d(
         pred_index,
         gt_index_arr,
-        color="steelblue",
-        s=20,
-        alpha=0.7,
-        edgecolor="black",
-        linewidth=0.5,
+        bins=[n_pred, n_gt],
+        range=[[0, n_pred], [0, n_gt]],
+    )
+    occupancy = (counts > 0).astype(int)
+    plt.imshow(
+        occupancy.T,
+        origin="lower",
+        aspect="auto",
+        cmap="Greys",
+        interpolation="nearest",
+        extent=[0, n_pred, 0, n_gt],
     )
     plt.xlabel("Predicted conformation index")
     plt.ylabel("Assigned GT conformation index")
