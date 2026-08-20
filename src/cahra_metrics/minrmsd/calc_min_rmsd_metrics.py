@@ -33,6 +33,7 @@ import os
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap, Normalize, to_hex
 import scipy.stats
 from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import squareform
@@ -779,6 +780,39 @@ def make_plot_rmsd_dendrogram(
     condensed = squareform(combined_rmsd, checks=False)
     # Perform hierarchical clustering using the average linkage method
     linkage_matrix = linkage(condensed, method="average")
+    n_total = combined_rmsd.shape[0]
+
+    # Use a custom colormap for the dendrogram, falling back to a default if
+    # "vanimo" is not available
+    try:
+        cmap = plt.get_cmap("vanimo")
+    except ValueError:
+        cmap = LinearSegmentedColormap.from_list(
+            "vanimo",
+            ["#1f9d55", "#d9f5df", "#ff7ed8"],
+        )
+
+    def cluster_color(cluster_id: int) -> str:
+        """Color each cluster by GT fraction, using a pink/green vanimo palette."""
+
+        # Get the members of the cluster by recursively walking the linkage matrix
+        members = set()
+
+        def walk(node: int):
+            # If the node is a leaf (original observation), add it to members
+            if node < n_total:
+                members.add(node)
+                return
+            # If the node is a cluster, recursively walk its children
+            left = int(linkage_matrix[node - n_total, 0])
+            right = int(linkage_matrix[node - n_total, 1])
+            walk(left)
+            walk(right)
+
+        walk(cluster_id)  # Start walking from the given cluster_id
+        gt_count = sum(1 for idx in members if idx < n_gt)
+        gt_fraction = gt_count / len(members) if members else 0.5
+        return to_hex(cmap(gt_fraction))
 
     fig, ax = plt.subplots(figsize=(12, 8))
     dendrogram(
@@ -786,13 +820,22 @@ def make_plot_rmsd_dendrogram(
         ax=ax,
         color_threshold=0,
         no_labels=True,
+        link_color_func=cluster_color,
     )
 
+    # Add a colorbar to indicate the GT fraction in each cluster
+    norm = Normalize(vmin=0.0, vmax=1.0)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax, pad=0.05)
+    cbar.set_label("GT fraction in cluster (0 = all pred, 1 = all GT)")
+
+    #
     ax.set_title("Hierarchical clustering of GT + predicted conformations")
     ax.set_xlabel("Conformation index")
     ax.set_ylabel("Distance (Å)")
     if n_gt > 0:
-        ax.axvspan(-0.5, n_gt - 0.5, color="tab:blue", alpha=0.05)
+        ax.axvspan(-0.5, n_gt - 0.5, color="lightgray", alpha=0.08)
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, "rmsd_dendrogram.png"), dpi=300)
     plt.savefig(os.path.join(plot_dir, "rmsd_dendrogram.pdf"))
