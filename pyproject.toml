@@ -35,7 +35,8 @@ dependencies = [
     "torch",
     "mdtraj",
     "lxml_html_clean",
-    "gemmi-program"
+    "gemmi-program",
+    "umap-learn"
 ]
 
 [project.optional-dependencies]
