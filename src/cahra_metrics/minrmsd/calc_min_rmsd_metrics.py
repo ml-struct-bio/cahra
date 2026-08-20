@@ -780,6 +780,8 @@ def make_plot_rmsd_dendrogram(
     condensed = squareform(combined_rmsd, checks=False)
     # Perform hierarchical clustering using the average linkage method
     linkage_matrix = linkage(condensed, method="average")
+
+    # Total number of conformations (GT + predicted)
     n_total = combined_rmsd.shape[0]
 
     # Use a custom colormap for the dendrogram, falling back to a default if
@@ -810,7 +812,9 @@ def make_plot_rmsd_dendrogram(
             walk(right)
 
         walk(cluster_id)  # Start walking from the given cluster_id
+        # Count how many of the members are GT conformations (indices < n_gt)
         gt_count = sum(1 for idx in members if idx < n_gt)
+        # Calculate the fraction of GT conformations in the cluster
         gt_fraction = gt_count / len(members) if members else 0.5
         return to_hex(cmap(gt_fraction))
 
@@ -830,7 +834,8 @@ def make_plot_rmsd_dendrogram(
     cbar = fig.colorbar(sm, ax=ax, pad=0.05)
     cbar.set_label("GT fraction in cluster (0 = all pred, 1 = all GT)")
 
-    #
+    # Could use leaves_list to label the x-axis with GT/pred indices
+    # but it would be too cluttered for large ensembles
     ax.set_title("Hierarchical clustering of GT + predicted conformations")
     ax.set_xlabel("Conformation index")
     ax.set_ylabel("Distance (Å)")
