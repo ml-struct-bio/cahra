@@ -936,11 +936,12 @@ def main(args):
     )
     make_plot_occupancy(
         pred_u_rmsd_min_dict["gt_index"],
-        pred_u_rmsd_min_dict["gt_filenames"],
+        results.gt_filenames,
         results.pred_confs_dir_label_figures,
     )
     make_plot_coverage(
         pred_u_rmsd_min_dict["gt_index"],
+        results.gt_filenames,
         results.pred_confs_dir_label_figures,
     )
 
