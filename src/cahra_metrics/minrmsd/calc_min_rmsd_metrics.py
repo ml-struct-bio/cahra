@@ -43,6 +43,11 @@ from cahra_metrics.utilities.utils import (
     save_dict_to_json,
     extract_min_rmsd_values,
     get_gt_multiplicity,
+    get_idx_from_filenames,
+)
+from cahra_metrics.validate_ens.make_ensemble_pdb import (
+    calc_cv,
+    order_ensemble_by_cv,
 )
 
 
@@ -624,6 +629,90 @@ def make_plot_coverage(
     plt.clf()
 
 
+def make_rmsd_heatmap(
+    rmsds: list[list[float]], gt_filenames: list[str], plot_dir: str
+):
+    """Make a heatmap of the RMSD values between predicted and GT conformations.
+
+    Args:
+        rmsds: 2D list of RMSD values, where rmsds[i][j] is the RMSD between
+            predicted conformation i and GT conformation j.
+        gt_filenames: List of GT conformation filenames (one per GT conformation).
+        plot_dir: Directory to save the plot in.
+    """
+    rmsds_arr = np.asarray(rmsds, dtype=float)
+    gt_indices = get_idx_from_filenames(gt_filenames)
+    plt.imshow(
+        rmsds_arr,
+        origin="lower",
+        aspect="auto",
+        cmap="nipy_spectral",
+        interpolation="nearest",
+    )
+    x_label_positions = np.arange(len(gt_indices) + 1, step=10)
+    y_label_positions = np.arange(len(rmsds_arr) + 1, step=10)
+    plt.xticks(x_label_positions, x_label_positions, rotation=0)
+    plt.yticks(y_label_positions, y_label_positions, rotation=0)
+    plt.colorbar(label="RMSD ($\\AA$)")
+    plt.xlabel("GT conformation index")
+    plt.ylabel("Predicted conformation index")
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsd_heatmap.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsd_heatmap.pdf"))
+    plt.clf()
+
+
+def make_rmsd_heatmap_ordered_by_CV(
+    aligned_pred_ensemble: mda.Universe,
+    rmsds: list[list[float]],
+    gt_filenames: list[str],
+    plot_dir: str,
+):
+    """Make rmsd heatmap with pred_confs ordered by CV (from highest
+        to lowest) and GT confs ordered by index.
+
+    Args:
+        aligned_pred_ensemble (mda.Universe): Aligned predicted ensemble of
+            conformations.
+        rmsds (list[list[float]]): 2D list of RMSD values, where rmsds[i][j]
+            is the RMSD between predicted conformation i and GT conformation j.
+        gt_filenames (list[str]): List of GT conformation filenames.
+        plot_dir (str): Directory to save the plot in.
+    """
+    # Get the order of predicted conformations based on CV (from highest to lowest)
+    _, _, cvangle = calc_cv(aligned_pred_ensemble)
+    # Get order to rearrange pred confs by CV (from highest to lowest)
+    order = order_ensemble_by_cv(cvangle)
+    # only keep 1 decimal place for CV angle labels
+    cvangle = [round(angle, 1) for angle in cvangle]
+
+    rmsds_arr = np.asarray(rmsds, dtype=float)
+    gt_indices = get_idx_from_filenames(gt_filenames)
+    plt.imshow(
+        rmsds_arr[order],  # reorder pred confs by CV
+        origin="lower",
+        aspect="auto",
+        cmap="nipy_spectral",
+        interpolation="nearest",
+    )
+    step = 10
+    x_label_positions = np.arange(len(gt_indices) + 1, step=step)
+    y_label_positions = np.arange(len(rmsds_arr), step=step)
+    plt.xticks(x_label_positions, x_label_positions, rotation=0)
+    plt.yticks(
+        y_label_positions,
+        np.asarray(cvangle, dtype=float)[order][::step],
+        rotation=0,
+    )
+    plt.colorbar(label="RMSD ($\\AA$)")
+    plt.xlabel("GT conformation index")
+    plt.ylabel("Predicted conformation CV angle (degrees)")
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsd_heatmap_by_CV.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsd_heatmap_by_CV.pdf"))
+    plt.clf()
+
+
 def create_selection_string(
     select_str: str,
     include_tag: bool,
@@ -941,6 +1030,17 @@ def main(args):
     )
     make_plot_coverage(
         pred_u_rmsd_min_dict["gt_index"],
+        results.gt_filenames,
+        results.pred_confs_dir_label_figures,
+    )
+    make_rmsd_heatmap(
+        pred_u_rmsd_min_dict["rmsds"],
+        results.gt_filenames,
+        results.pred_confs_dir_label_figures,
+    )
+    make_rmsd_heatmap_ordered_by_CV(
+        pred_u_rmsd_min_aligned,
+        pred_u_rmsd_min_dict["rmsds"],
         results.gt_filenames,
         results.pred_confs_dir_label_figures,
     )

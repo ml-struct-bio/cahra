@@ -141,6 +141,16 @@ def calc_cv(u: mda.Universe) -> tuple[list[int], list[float], list[float]]:
     return iteration, CVrad, CVangle
 
 
+def order_ensemble_by_cv(cvangle: list[float]) -> np.ndarray:
+    # order models fom open (high CV angle) to closed
+    # find indices needed to reorder CV list
+    order_by_CV_idxs = np.array(
+        np.flip(np.argsort(np.array(cvangle, dtype=float))),
+        dtype=int,
+    )
+    return order_by_CV_idxs
+
+
 def get_name():
     return "make_ensemble_pdb"
 
@@ -196,10 +206,7 @@ def main(args):
 
     # order models fom open (high CV angle) to closed
     # find indices needed to reorder CV list
-    order_by_CV_idxs = np.array(
-        np.flip(np.argsort(np.array(cvangle, dtype=float))),
-        dtype=int,
-    )
+    order_by_CV_idxs = order_ensemble_by_cv(cvangle)
     # save CV ordered from open to closed plot to output dir
     plt.plot(
         np.arange(len(order_by_CV_idxs)),
