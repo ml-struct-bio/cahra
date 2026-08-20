@@ -483,7 +483,7 @@ def make_plot_rmsd_min_box_violin(rmsd_min_vals, plot_dir: str):
     plt.clf()
 
 
-def make_plot_assignment(gt_index, plot_dir: str):
+def make_plot_assignment(gt_index: int, p_index: int, plot_dir: str):
     """Plot which GT conformation each predicted conformation is assigned to.
 
     Each predicted conformation is assigned to the GT conformation with the
@@ -498,7 +498,7 @@ def make_plot_assignment(gt_index, plot_dir: str):
         plot_dir (str): Directory to save the plot in.
     """
     gt_index_arr = np.asarray(gt_index, dtype=int)
-    pred_index = np.arange(len(gt_index_arr))
+    pred_index = np.asarray(p_index, dtype=int)
     plt.scatter(
         pred_index,
         gt_index_arr,
@@ -906,6 +906,7 @@ def main(args):
     )
     make_plot_assignment(
         pred_u_rmsd_min_dict["gt_index"],
+        pred_u_rmsd_min_dict["pred_index"],
         results.pred_confs_dir_label_figures,
     )
     make_plot_occupancy(
