@@ -34,6 +34,8 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
+from scipy.cluster.hierarchy import linkage, dendrogram
+from scipy.spatial.distance import squareform
 import MDAnalysis as mda
 from MDAnalysis.analysis import align, rms
 from cahra_metrics.utilities.utils import (
@@ -713,6 +715,90 @@ def make_rmsd_heatmap_ordered_by_CV(
     plt.clf()
 
 
+def compute_combined_rmsd_matrix(
+    gt_u: mda.Universe,
+    pred_u: mda.Universe,
+    selection: str,
+) -> np.ndarray:
+    """Build the full GT+pred pairwise RMSD matrix.
+
+    This is used for clustering and embedding plots, which need the combined
+    GT/pred distance matrix rather than only the stored GT-pred block.
+    To answer the question 'Do predicted conformations cluster with the
+    ground-truth states, or are they sitting in separate regions of the landscape?'
+    in combination with the dendrogram and embedding plots.
+    """
+    n_gt = len(gt_u.trajectory)
+    n_pred = len(pred_u.trajectory)
+    total = n_gt + n_pred
+    combined = np.zeros((total, total), dtype=float)
+
+    for i in range(n_gt):
+        gt_u.trajectory[i]
+        gt_i_pos = gt_u.select_atoms(selection).positions.copy()
+        for j in range(i, n_gt):
+            gt_u.trajectory[j]
+            gt_j_pos = gt_u.select_atoms(selection).positions.copy()
+            val = rms.rmsd(gt_i_pos, gt_j_pos, superposition=True)
+            combined[i, j] = val
+            combined[j, i] = val
+
+    for i in range(n_pred):
+        pred_u.trajectory[i]
+        pred_i_pos = pred_u.select_atoms(selection).positions.copy()
+        for j in range(i, n_pred):
+            pred_u.trajectory[j]
+            pred_j_pos = pred_u.select_atoms(selection).positions.copy()
+            val = rms.rmsd(pred_i_pos, pred_j_pos, superposition=True)
+            combined[n_gt + i, n_gt + j] = val
+            combined[n_gt + j, n_gt + i] = val
+
+    for i in range(n_gt):
+        gt_u.trajectory[i]
+        gt_i_pos = gt_u.select_atoms(selection).positions.copy()
+        for j in range(n_pred):
+            pred_u.trajectory[j]
+            pred_j_pos = pred_u.select_atoms(selection).positions.copy()
+            val = rms.rmsd(gt_i_pos, pred_j_pos, superposition=True)
+            combined[i, n_gt + j] = val
+            combined[n_gt + j, i] = val
+
+    return combined
+
+
+def make_plot_rmsd_dendrogram(
+    combined_rmsd: np.ndarray,
+    plot_dir: str,
+    n_gt: int | None = None,
+):
+    """Make a hierarchical clustering dendrogram from the combined RMSD matrix."""
+    if n_gt is None:
+        n_gt = 0
+
+    # Convert the combined RMSD matrix to condensed form for clustering
+    condensed = squareform(combined_rmsd, checks=False)
+    # Perform hierarchical clustering using the average linkage method
+    linkage_matrix = linkage(condensed, method="average")
+
+    fig, ax = plt.subplots(figsize=(12, 8))
+    dendrogram(
+        linkage_matrix,
+        ax=ax,
+        color_threshold=0,
+        no_labels=True,
+    )
+
+    ax.set_title("Hierarchical clustering of GT + predicted conformations")
+    ax.set_xlabel("Conformation index")
+    ax.set_ylabel("Distance (Å)")
+    if n_gt > 0:
+        ax.axvspan(-0.5, n_gt - 0.5, color="tab:blue", alpha=0.05)
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "rmsd_dendrogram.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "rmsd_dendrogram.pdf"))
+    plt.clf()
+
+
 def create_selection_string(
     select_str: str,
     include_tag: bool,
@@ -1043,6 +1129,16 @@ def main(args):
         pred_u_rmsd_min_dict["rmsds"],
         results.gt_filenames,
         results.pred_confs_dir_label_figures,
+    )
+    gt_idxs, _ = get_gt_multiplicity(
+        pred_u_rmsd_min_dict["gt_index"],
+        results.gt_filenames,
+    )
+    combined_rmsd = compute_combined_rmsd_matrix(gt_u, pred_u, selection)
+    make_plot_rmsd_dendrogram(
+        combined_rmsd,
+        results.pred_confs_dir_label_figures,
+        n_gt=len(gt_idxs),
     )
 
     # TODO option to also visualise/save rmsf via temp factor in (saved) min-RMSD
