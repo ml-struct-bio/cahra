@@ -544,6 +544,10 @@ def make_plot_occupancy(gt_index, plot_dir: str):
     )
     plt.xlabel("GT conformation index")
     plt.ylabel("Number of predicted conformations")
+    # major ticks at each integer GT index
+    plt.xticks(np.arange(n_gt))
+    # minor ticks at the midpoint between each pair of major ticks
+    plt.gca().set_xticks(np.arange(n_gt) + 0.5, minor=True)
     # grid with both major and minor ticks
     plt.grid(True, which="major", linestyle="--", alpha=0.5, axis="y")
     plt.grid(True, which="minor", linestyle=":", alpha=0.3, axis="y")
