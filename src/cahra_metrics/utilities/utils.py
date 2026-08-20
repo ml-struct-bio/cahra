@@ -216,3 +216,35 @@ def extract_min_rmsd_values(rmsds: list[list[float]], gt_indices: list[int]):
         np.ndarray: Array of minimum RMSD values for each predicted conformation.
     """
     return np.array([rmsds[i][j] for i, j in enumerate(gt_indices)])
+
+
+def get_gt_multiplicity(gt_index: list[int], gt_filenames: list[str]):
+    """Get number of predicted conformations that map to each GT conformation.
+
+    Args:
+        gt_index: Array-like of GT-conformation indices (one per predicted
+            conformation).
+        gt_filenames: List of GT conformation filenames (one per GT conformation).
+    """
+
+    # Read the GT filename and extract the leading index number for each GT
+    # conformation:
+    gt_idxs = [
+        int(os.path.basename(fname).split("_")[0]) for fname in gt_filenames
+    ]
+    gt_idxs_count = []
+
+    # Count how many predicted conformations are assigned to each GT conformation:
+    uniq_gt_idxs, gt_idx_counts = np.unique(gt_index, return_counts=True)
+
+    # loop through all gt indices and get the count of predicted conformations assigned
+    # to each GT conformation
+    for gt_idx in gt_idxs:
+        if gt_idx in uniq_gt_idxs:
+            # get index of this gt_idx in uniq_gt_idxs to find its count:
+            count = gt_idx_counts[uniq_gt_idxs.tolist().index(gt_idx)]
+        else:
+            count = 0
+        gt_idxs_count.append(count)
+
+    return gt_idxs, gt_idxs_count

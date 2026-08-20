@@ -42,6 +42,7 @@ from cahra_metrics.utilities.utils import (
     Ensemble_Stats,
     save_dict_to_json,
     extract_min_rmsd_values,
+    get_gt_multiplicity,
 )
 
 
@@ -519,7 +520,9 @@ def make_plot_assignment(gt_index: int, p_index: int, plot_dir: str):
     plt.clf()
 
 
-def make_plot_occupancy(gt_index, plot_dir: str):
+def make_plot_occupancy(
+    gt_index: list[int], gt_filenames: list[str], plot_dir: str
+):
     """Plot how many predicted conformations occupy each GT conformation.
 
     Counts how many predicted conformations are assigned to each GT
@@ -530,24 +533,24 @@ def make_plot_occupancy(gt_index, plot_dir: str):
     Args:
         gt_index: Array-like of GT-conformation indices (one per predicted
             conformation).
+        gt_filenames: List of GT conformation filenames (one per GT conformation).
         plot_dir (str): Directory to save the plot in.
     """
-    gt_index_arr = np.asarray(gt_index, dtype=int)
-    n_gt = gt_index_arr.max() + 1
-    counts = np.bincount(gt_index_arr, minlength=n_gt)
+    gt_idxs, gt_idxs_count = get_gt_multiplicity(gt_index, gt_filenames)
+
+    # x-axis is GT conformation index
+    # y-axis is count of predicted conformations assigned to each GT conformation
     plt.bar(
-        np.arange(n_gt),
-        counts,
+        np.array(gt_idxs, dtype=int),
+        np.asarray(gt_idxs_count, dtype=int),
         color="steelblue",
         edgecolor="black",
         linewidth=0.5,
     )
     plt.xlabel("GT conformation index")
-    plt.ylabel("Number of predicted conformations")
-    # major ticks at each integer GT index
-    plt.xticks(np.arange(n_gt))
-    # minor ticks at the midpoint between each pair of major ticks
-    plt.gca().set_xticks(np.arange(n_gt) + 0.5, minor=True)
+    plt.ylabel(
+        "Number of predicted conformations with min-RMSD to GT conformation"
+    )
     # grid with both major and minor ticks
     plt.grid(True, which="major", linestyle="--", alpha=0.5, axis="y")
     plt.grid(True, which="minor", linestyle=":", alpha=0.3, axis="y")
@@ -557,23 +560,28 @@ def make_plot_occupancy(gt_index, plot_dir: str):
     plt.clf()
 
 
-def make_plot_coverage(gt_index, plot_dir: str):
+def make_plot_coverage(
+    gt_index: list[int], gt_filenames: list[str], plot_dir: str
+):
     """Plot the cumulative coverage of the GT ensemble by the predicted one.
 
     Shows, as a function of the number of GT conformations considered, the
     fraction of GT conformations that have at least one predicted conformation
-    assigned to them. A steep curve that reaches 1.0 quickly means the
-    predicted ensemble covers the GT ensemble well.
+    assigned to them. An ideal curve is perfectly diagonal, meaning that the predicted
+    ensemble covers the GT ensemble evenly.
+
 
     Args:
         gt_index: Array-like of GT-conformation indices (one per predicted
             conformation).
+        gt_filenames: List of GT conformation filenames (one per GT conformation).
         plot_dir (str): Directory to save the plot in.
     """
-    gt_index_arr = np.asarray(gt_index, dtype=int)
-    n_gt = gt_index_arr.max() + 1
+    gt_idxs, gt_idxs_count = get_gt_multiplicity(gt_index, gt_filenames)
+
+    n_gt = len(gt_idxs)  # total number of GT conformations
     # unique GT conformations that have at least one predicted conformation
-    covered = np.unique(gt_index_arr)
+    covered = np.unique(np.asarray(gt_index, dtype=int))
     # cumulative fraction of GT conformations covered as we consider more of
     # the GT ensemble (ordered by GT index)
     covered_set = set(covered.tolist())
@@ -584,7 +592,7 @@ def make_plot_coverage(gt_index, plot_dir: str):
         ]
     )
     plt.plot(
-        np.arange(n_gt),
+        gt_idxs,
         cumulative,
         color="steelblue",
         linewidth=2,
@@ -915,6 +923,7 @@ def main(args):
     )
     make_plot_occupancy(
         pred_u_rmsd_min_dict["gt_index"],
+        pred_u_rmsd_min_dict["gt_filenames"],
         results.pred_confs_dir_label_figures,
     )
     make_plot_coverage(
