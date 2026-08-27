@@ -28,6 +28,7 @@ https://opensource.org/license/mit
 
 # TODO fill docstrings
 
+import csv
 import argparse
 import torch
 import mdtraj
@@ -589,6 +590,28 @@ def main(args):
             table,
             headers="firstrow",
             tablefmt="fancy_grid",
+        )
+    )
+
+    # Save the formatted table to a csv file
+    rankings_table_fpath = os.path.join(
+        pred_confs_dir,
+        "all_metrics.csv",
+    )
+    print(
+        "Saving ranking csv to {}".format(
+            rankings_table_fpath,
+        )
+    )
+    with open(
+        rankings_table_fpath,
+        "w+",
+    ) as f:
+        writer = csv.writer(f, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+        writer.writerows(table)
+    print(
+        "Saved ranking csv to {}".format(
+            rankings_table_fpath,
         )
     )
 

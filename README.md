@@ -42,6 +42,11 @@ bash calc_min_rmsd_metricsv6.bash
 wait $!
 bash calc_pcv6.bash
 wait $!
+bash make_ensemble_pdbv6.bash
+wait $!
+<source ccp4>
+run_gt_pred_rota_rama_clash_v6.sh
+wait$!
 popd
 ```
 
