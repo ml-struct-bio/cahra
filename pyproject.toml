@@ -36,6 +36,7 @@ dependencies = [
     "mdtraj",
     "lxml_html_clean",
     "gemmi-program",
+    "scikit-learn",
     "umap-learn"
 ]
 

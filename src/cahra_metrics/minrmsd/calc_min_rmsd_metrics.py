@@ -37,6 +37,8 @@ from matplotlib.colors import LinearSegmentedColormap, Normalize, to_hex
 import scipy.stats
 from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import squareform
+from sklearn.manifold import TSNE
+import umap
 import MDAnalysis as mda
 from MDAnalysis.analysis import align, rms
 from cahra_metrics.utilities.utils import (
@@ -847,6 +849,75 @@ def make_plot_rmsd_dendrogram(
     plt.clf()
 
 
+def make_plot_rmsd_embedding(
+    combined_rmsd: np.ndarray,
+    plot_dir: str,
+    method: str = "tsne",
+    n_gt: int | None = None,
+):
+    """Create a 2D embedding of the GT and predicted conformations.
+
+    The embedding is built from the combined GT+pred RMSD matrix using either
+    T-SNE or UMAP. The GT and predicted conformations are plotted in the same
+    coordinate system and distinguished by colour.
+    """
+    if method not in {"tsne", "umap"}:
+        raise ValueError("method must be 'tsne' or 'umap'")
+    if n_gt is None:
+        n_gt = 0
+
+    n_total = combined_rmsd.shape[0]
+    gt_mask = np.arange(n_total) < n_gt
+    if method == "tsne":
+        reducer = TSNE(
+            n_components=2,
+            metric="precomputed",
+            random_state=0,
+            perplexity=min(30, max(5, n_total - 1)),
+            init="random",
+        )
+        suffix = "tsne"
+    else:
+        reducer = umap.UMAP(
+            n_components=2,
+            metric="precomputed",
+            random_state=0,
+            n_neighbors=min(15, max(5, n_total - 1)),
+        )
+        suffix = "umap"
+
+    embedding = reducer.fit_transform(combined_rmsd)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.scatter(
+        embedding[gt_mask, 0],
+        embedding[gt_mask, 1],
+        c="tab:blue",
+        s=18,
+        alpha=0.75,
+        label="GT",
+    )
+    ax.scatter(
+        embedding[~gt_mask, 0],
+        embedding[~gt_mask, 1],
+        c="tab:orange",
+        s=18,
+        alpha=0.75,
+        label="Predicted",
+    )
+
+    ax.set_title(f"{method.upper()} embedding of GT + predicted conformations")
+    ax.set_xlabel("Embedding component 1")
+    ax.set_ylabel("Embedding component 2")
+    ax.legend(frameon=True)
+    ax.grid(True, linestyle="--", alpha=0.25)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, f"{suffix}.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, f"{suffix}.pdf"))
+    plt.clf()
+
+
 def create_selection_string(
     select_str: str,
     include_tag: bool,
@@ -1186,6 +1257,18 @@ def main(args):
     make_plot_rmsd_dendrogram(
         combined_rmsd,
         results.pred_confs_dir_label_figures,
+        n_gt=len(gt_idxs),
+    )
+    make_plot_rmsd_embedding(
+        combined_rmsd,
+        results.pred_confs_dir_label_figures,
+        method="tsne",
+        n_gt=len(gt_idxs),
+    )
+    make_plot_rmsd_embedding(
+        combined_rmsd,
+        results.pred_confs_dir_label_figures,
+        method="umap",
         n_gt=len(gt_idxs),
     )
 
