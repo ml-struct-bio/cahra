@@ -546,7 +546,6 @@ def make_plot_assignment(gt_index: int, p_index: int, plot_dir: str):
 def make_plot_assignment_ordered_by_CV(
     aligned_pred_ensemble: mda.Universe,
     gt_index: list[int],
-    p_index: list[int],
     plot_dir: str,
 ):
     """Plot the GT assignment of each predicted conformation ordered by CV.
@@ -563,8 +562,6 @@ def make_plot_assignment_ordered_by_CV(
             conformations.
         gt_index: Array-like of GT-conformation indices (one per predicted
             conformation).
-        p_index: Array-like of predicted-conformation indices (one per predicted
-            conformation).
         plot_dir (str): Directory to save the plot in.
     """
     # Get the order of predicted conformations based on CV (from highest to lowest)
@@ -575,32 +572,15 @@ def make_plot_assignment_ordered_by_CV(
     cvangle = [round(angle, 1) for angle in cvangle]
 
     gt_index_arr = np.asarray(gt_index, dtype=int)
-    pred_index = np.asarray(p_index, dtype=int)[order]
-    n_pred = len(pred_index)
-    n_gt = len(gt_index_arr)
-    # 2D histogram of (pred, gt) assignments; each bin is 1 if it has an entry
-    # and 0 otherwise
-    counts, _, _ = np.histogram2d(
-        pred_index,
-        gt_index_arr,
-        bins=[n_pred, n_gt],
-        range=[[0, n_pred], [0, n_gt]],
-    )
-    occupancy = (counts > 0).astype(int)
-    plt.imshow(
-        occupancy.T,
-        origin="lower",
-        aspect="auto",
-        cmap="Greys",
-        interpolation="nearest",
-        extent=[0, n_pred, 0, n_gt],
-    )
-    step = 10
-    x_label_positions = np.arange(n_pred, step=step)
-    plt.xticks(
-        x_label_positions,
-        np.asarray(cvangle, dtype=float)[order][::step],
-        rotation=0,
+    # 2d scatterplot of CV angle (x-axis) and assigned GT conformation index
+    # (y-axis) with no lines connecting points:
+    plt.scatter(
+        np.asarray(cvangle, dtype=float)[order],
+        gt_index_arr[order],
+        s=50,
+        c="steelblue",
+        edgecolors="black",
+        linewidth=0.5,
     )
     plt.xlabel("Predicted conformation CV angle (degrees)")
     plt.ylabel("Assigned GT conformation index")
