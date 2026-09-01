@@ -543,6 +543,76 @@ def make_plot_assignment(gt_index: int, p_index: int, plot_dir: str):
     plt.clf()
 
 
+def make_plot_assignment_ordered_by_CV(
+    aligned_pred_ensemble: mda.Universe,
+    gt_index: list[int],
+    p_index: list[int],
+    plot_dir: str,
+):
+    """Plot the GT assignment of each predicted conformation ordered by CV.
+
+    Same as :func:`make_plot_assignment`, but the predicted conformations on
+    the x-axis are ordered by their collective variable (CV angle), from open
+    (high CV angle) to closed (low CV angle), mirroring how
+    :func:`make_rmsd_heatmap_ordered_by_CV` reorders the RMSD heatmap. The
+    x-axis is labelled with the CV angle of each predicted conformation so the
+    ordering is interpretable.
+
+    Args:
+        aligned_pred_ensemble (mda.Universe): Aligned predicted ensemble of
+            conformations.
+        gt_index: Array-like of GT-conformation indices (one per predicted
+            conformation).
+        p_index: Array-like of predicted-conformation indices (one per predicted
+            conformation).
+        plot_dir (str): Directory to save the plot in.
+    """
+    # Get the order of predicted conformations based on CV (from highest to lowest)
+    _, _, cvangle = calc_cv(aligned_pred_ensemble)
+    # Get order to rearrange pred confs by CV (from highest to lowest)
+    order = order_ensemble_by_cv(cvangle)
+    # only keep 1 decimal place for CV angle labels
+    cvangle = [round(angle, 1) for angle in cvangle]
+
+    gt_index_arr = np.asarray(gt_index, dtype=int)
+    pred_index = np.asarray(p_index, dtype=int)[order]
+    n_pred = len(pred_index)
+    n_gt = len(gt_index_arr)
+    # 2D histogram of (pred, gt) assignments; each bin is 1 if it has an entry
+    # and 0 otherwise
+    counts, _, _ = np.histogram2d(
+        pred_index,
+        gt_index_arr,
+        bins=[n_pred, n_gt],
+        range=[[0, n_pred], [0, n_gt]],
+    )
+    occupancy = (counts > 0).astype(int)
+    plt.imshow(
+        occupancy.T,
+        origin="lower",
+        aspect="auto",
+        cmap="Greys",
+        interpolation="nearest",
+        extent=[0, n_pred, 0, n_gt],
+    )
+    step = 10
+    x_label_positions = np.arange(n_pred, step=step)
+    plt.xticks(
+        x_label_positions,
+        np.asarray(cvangle, dtype=float)[order][::step],
+        rotation=0,
+    )
+    plt.xlabel("Predicted conformation CV angle (degrees)")
+    plt.ylabel("Assigned GT conformation index")
+    # grid with both major and minor ticks
+    plt.grid(True, which="major", linestyle="--", alpha=0.5)
+    plt.grid(True, which="minor", linestyle=":", alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_dir, "assignment_by_CV.png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, "assignment_by_CV.pdf"))
+    plt.clf()
+
+
 def make_plot_occupancy(
     gt_index: list[int], gt_filenames: list[str], plot_dir: str
 ):
@@ -1224,6 +1294,12 @@ def main(args):
         results.pred_confs_dir_label_figures,
     )
     make_plot_assignment(
+        pred_u_rmsd_min_dict["gt_index"],
+        pred_u_rmsd_min_dict["pred_index"],
+        results.pred_confs_dir_label_figures,
+    )
+    make_plot_assignment_ordered_by_CV(
+        pred_u_rmsd_min_aligned,
         pred_u_rmsd_min_dict["gt_index"],
         pred_u_rmsd_min_dict["pred_index"],
         results.pred_confs_dir_label_figures,
