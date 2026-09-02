@@ -24,7 +24,7 @@ for pdb in ${aligned_ensemble_dir}/*.${EXT}; do
     molprobity.ramalyze \
         "$pdb" \
         json=True \
-        --json-filename "${log_dir}/${base}_rama.json"n\
+        --json-filename "${log_dir}/${base}_rama.json" \
         > "${log_dir}/${base}_rama.log" 2>&1
     wait $!
 done

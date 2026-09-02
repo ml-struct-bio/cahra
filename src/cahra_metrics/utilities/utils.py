@@ -197,8 +197,10 @@ def save_dict_to_json(dictionary: dict, json_file: str, indent: int = 4):
         json.dump(dictionary, f, indent=indent)
 
 
-# def load_dict_from_json(json_file: str):
-#     return json.load(json_file)
+"""
+def load_dict_from_json(json_file: str):
+    return json.load(json_file)
+"""
 
 
 def extract_min_rmsd_values(rmsds: list[list[float]], gt_indices: list[int]):
@@ -258,3 +260,30 @@ def get_gt_multiplicity(gt_index: list[int], gt_filenames: list[str]):
         gt_idxs_count.append(count)
 
     return gt_idxs, gt_idxs_count
+
+
+def get_stereochem_json_files(
+    stereochem_dir: str,
+    pattern_match: str = ".json",
+    verbose: bool = False,
+) -> list[str]:
+    """_summary_
+
+    Args:
+        stereochem_dir (str): _description_
+        pattern_match (str, optional): _description_. Defaults to ".pdb".
+        verbose (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        list[str]: _description_
+    """
+    confs_path = os.path.join(stereochem_dir, "*")
+    # get all files in dir
+    jsons = glob.glob(confs_path)
+    # get fiels which match pattern
+    jsons = [json_f for json_f in jsons if pattern_match in json_f]
+    # get filenames ordered by natsort
+    jsons = natsorted(jsons)
+    if verbose:
+        print(jsons)
+    return jsons
