@@ -31,7 +31,7 @@ Once pip-installed, command line interface utilities and options available for c
 2. Put entries into directory `prelim_scoring/prelim_submissions/<entrylabel>/confs`
 3. Copy scripts to `prelim_scoring` and run as below:
 ```
-cp conf-het/scripts/*.bash prelim_scoring
+cp conf-het/scripts/*.sh prelim_scoring/
 conda activate cahra-internal # if not already active
 pushd prelim_scoring
 bash convert_ensemblesv6.bash
@@ -44,12 +44,21 @@ bash calc_pcv6.bash
 wait $!
 bash make_ensemble_pdbv6.bash
 wait $!
-<source ccp4>
 run_gt_pred_rota_rama_clash_v6.sh
 wait$!
 popd
 ```
 
+To run stereochemistry plot generation routine, need to first grab 6xou.pdb
+and add a subdir to metrics directory (e.g. `mkdir -p prelim_scoring/metric_calculation_v6/orig_6xou/pdbs/`, `cp 6xou.pdb prelim_scoring/metric_calculation_v6/orig_6xou/pdbs/`). 
+Then run:
+
+```
+pushd prelim_scoring
+run_stereochem_analysis_v6.bash
+wait $!
+popd
+```
 Look at the final table in `prelim_scoring/calc_pcv6.log`
 
 Metrics calculated (and plots), along with aligned ensembles will be stored in `metric_calculationv6` directory

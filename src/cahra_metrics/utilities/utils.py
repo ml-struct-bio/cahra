@@ -51,7 +51,7 @@ class Ensemble_Stats(object):
         if gt_filenames:
             self.gt_filenames = gt_filenames
         self.pred_filenames: list[str] = pred_filenames
-
+        self.ensemble = ensemble
         # ensemble dictionary has sub-dicts accessible via keys:
 
         # CONF_STATS

@@ -37,6 +37,7 @@ import cahra_metrics.validate_ens.validate_ensembles
 import cahra_metrics.validate_ens.make_ensemble_pdb
 import cahra_metrics.minrmsd.calc_min_rmsd_metrics
 import cahra_metrics.pcv.calc_pcv
+import cahra_metrics.stereochemistry.stereochem_analysis
 
 
 def get_cahra_metrics_parent() -> Path:
@@ -70,6 +71,7 @@ def main():
         cahra_metrics.validate_ens.make_ensemble_pdb,
         cahra_metrics.minrmsd.calc_min_rmsd_metrics,
         cahra_metrics.pcv.calc_pcv,
+        cahra_metrics.stereochemistry.stereochem_analysis,
     ]
 
     module_helptext = [
@@ -89,6 +91,12 @@ def main():
             "Calculate proportion of captured variance between ensemble(s)"
             " and reference ensemble. Ensure ensembles are pre-aligned (which"
             " can be done by running RMSD/RMSF metric calculation)."
+        ),
+        (
+            "Take in molprobity rota, rama and clashscore jsons and add summary info"
+            " for each model to the metrics jsons. Creates dummy metric jsons for GT"
+            " and 6xou so that plotting of stereochemistry is uniform."
+            " Includes making the stereochemistry plots."
         ),
     ]
 

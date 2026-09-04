@@ -41,6 +41,7 @@ from cahra_metrics.utilities.utils import (
     get_stereochem_json_files,
     Ensemble_Stats,
     save_dict_to_json,
+    get_ensemble,
 )
 
 
@@ -129,6 +130,10 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Increase output verbosity",
         action="store_true",
     )
+
+
+def get_name():
+    return "stereochem_analysis"
 
 
 def check_directories_exist(args):
@@ -240,7 +245,7 @@ def add_geom_to_ensemble_stats(
     for (
         jsonfile,
         pred_filename,
-    ) in zip(rota_jsonfiles, results.pred_filename):
+    ) in zip(rota_jsonfiles, results["pred_filenames"]):
         check_basenames_identical(
             jsonfile,
             pred_filename,
@@ -259,19 +264,29 @@ def add_geom_to_ensemble_stats(
     rota_outlier_percentage_avg = float(np.average(rota_outlier_percentage))
     # Update json
     # Save model values for each pred model (to json)
-    results.conf_stats["rota_num_favored"] = rota_num_favored
-    results.conf_stats["rota_num_allowed"] = rota_num_allowed
-    results.conf_stats["rota_num_outliers"] = rota_num_outliers
-    results.conf_stats["rota_num_residues"] = rota_num_residues
-    results.conf_stats["rota_outlier_percentage"] = rota_outlier_percentage
+    results["ensemble"]["conf_stats"]["rota_num_favored"] = rota_num_favored
+    results["ensemble"]["conf_stats"]["rota_num_allowed"] = rota_num_allowed
+    results["ensemble"]["conf_stats"]["rota_num_outliers"] = rota_num_outliers
+    results["ensemble"]["conf_stats"]["rota_num_residues"] = rota_num_residues
+    results["ensemble"]["conf_stats"][
+        "rota_outlier_percentage"
+    ] = rota_outlier_percentage
     # Save average values for each ensemble (to json)
-    results.ensemble_stats["rota_num_favored_avg"] = rota_num_favored_avg
-    results.ensemble_stats["rota_num_allowed_avg"] = rota_num_allowed_avg
-    results.ensemble_stats["rota_num_outliers_avg"] = rota_num_outliers_avg
-    results.ensemble_stats["rota_num_residues_avg"] = rota_num_residues_avg
-    results.ensemble_stats["rota_outlier_percentage_avg"] = (
-        rota_outlier_percentage_avg
-    )
+    results["ensemble"]["ensemble_stats"][
+        "rota_num_favored_avg"
+    ] = rota_num_favored_avg
+    results["ensemble"]["ensemble_stats"][
+        "rota_num_allowed_avg"
+    ] = rota_num_allowed_avg
+    results["ensemble"]["ensemble_stats"][
+        "rota_num_outliers_avg"
+    ] = rota_num_outliers_avg
+    results["ensemble"]["ensemble_stats"][
+        "rota_num_residues_avg"
+    ] = rota_num_residues_avg
+    results["ensemble"]["ensemble_stats"][
+        "rota_outlier_percentage_avg"
+    ] = rota_outlier_percentage_avg
 
     # Extract rama analysis scores for each model
     rama_num_favored = []
@@ -284,7 +299,7 @@ def add_geom_to_ensemble_stats(
     for (
         jsonfile,
         pred_filename,
-    ) in zip(rama_jsonfiles, results.pred_filename):
+    ) in zip(rama_jsonfiles, results["pred_filenames"]):
         check_basenames_identical(
             jsonfile,
             pred_filename,
@@ -305,23 +320,35 @@ def add_geom_to_ensemble_stats(
     rama_favored_percentage_avg = float(np.average(rama_favored_percentage))
     # Update json
     # Save model values for each pred model (to json)
-    results.conf_stats["rama_num_favored"] = rama_num_favored
-    results.conf_stats["rama_num_allowed"] = rama_num_allowed
-    results.conf_stats["rama_num_outliers"] = rama_num_outliers
-    results.conf_stats["rama_num_residues"] = rama_num_residues
-    results.conf_stats["rama_outlier_percentage"] = rama_outlier_percentage
-    results.conf_stats["rama_favored_percentage"] = rama_favored_percentage
+    results["ensemble"]["conf_stats"]["rama_num_favored"] = rama_num_favored
+    results["ensemble"]["conf_stats"]["rama_num_allowed"] = rama_num_allowed
+    results["ensemble"]["conf_stats"]["rama_num_outliers"] = rama_num_outliers
+    results["ensemble"]["conf_stats"]["rama_num_residues"] = rama_num_residues
+    results["ensemble"]["conf_stats"][
+        "rama_outlier_percentage"
+    ] = rama_outlier_percentage
+    results["ensemble"]["conf_stats"][
+        "rama_favored_percentage"
+    ] = rama_favored_percentage
     # Save average values for each ensemble (to json)
-    results.ensemble_stats["rama_num_favored_avg"] = rama_num_favored_avg
-    results.ensemble_stats["rama_num_allowed_avg"] = rama_num_allowed_avg
-    results.ensemble_stats["rama_num_outliers_avg"] = rama_num_outliers_avg
-    results.ensemble_stats["rama_num_residues_avg"] = rama_num_residues_avg
-    results.ensemble_stats["rama_outlier_percentage_avg"] = (
-        rama_outlier_percentage_avg
-    )
-    results.ensemble_stats["rama_favored_percentage_avg"] = (
-        rama_favored_percentage_avg
-    )
+    results["ensemble"]["ensemble_stats"][
+        "rama_num_favored_avg"
+    ] = rama_num_favored_avg
+    results["ensemble"]["ensemble_stats"][
+        "rama_num_allowed_avg"
+    ] = rama_num_allowed_avg
+    results["ensemble"]["ensemble_stats"][
+        "rama_num_outliers_avg"
+    ] = rama_num_outliers_avg
+    results["ensemble"]["ensemble_stats"][
+        "rama_num_residues_avg"
+    ] = rama_num_residues_avg
+    results["ensemble"]["ensemble_stats"][
+        "rama_outlier_percentage_avg"
+    ] = rama_outlier_percentage_avg
+    results["ensemble"]["ensemble_stats"][
+        "rama_favored_percentage_avg"
+    ] = rama_favored_percentage_avg
 
     # Extract clashscore for each model
     clashscore = []
@@ -329,7 +356,7 @@ def add_geom_to_ensemble_stats(
     for (
         jsonfile,
         pred_filename,
-    ) in zip(clash_jsonfiles, results.pred_filename):
+    ) in zip(clash_jsonfiles, results["pred_filenames"]):
         check_basenames_identical(
             jsonfile,
             pred_filename,
@@ -342,15 +369,15 @@ def add_geom_to_ensemble_stats(
     num_clashes_avg = float(np.average(num_clashes))
     # Update json
     # Save model values for each pred model (to json)
-    results.conf_stats["clashscore"] = clashscore
-    results.conf_stats["num_clashes"] = num_clashes
+    results["ensemble"]["conf_stats"]["clashscore"] = clashscore
+    results["ensemble"]["conf_stats"]["num_clashes"] = num_clashes
     # Save average values for each ensemble (to json)
-    results.ensemble_stats["clashscore_avg"] = clashscore_avg
-    results.ensemble_stats["num_clashes_avg"] = num_clashes_avg
+    results["ensemble"]["ensemble_stats"]["clashscore_avg"] = clashscore_avg
+    results["ensemble"]["ensemble_stats"]["num_clashes_avg"] = num_clashes_avg
 
     # Save updated json with updated name
     updated_json_file = os.path.join(
-        results.pred_confs_dir_label_results,
+        results["pred_confs_dir_label_results"],
         "all_geom_metrics.json",
     )
     save_dict_to_json(results, updated_json_file)
@@ -377,14 +404,16 @@ def plot_hist(vals, xlabel: str, plot_dir: str, plot_name: str):
         label="Histogram",
     )
     # KDE overlay
-    kde = scipy.stats.gaussian_kde(vals)
-    x_vals = np.linspace(vals.min(), vals.max(), 200)
-    plt.plot(
-        x_vals,
-        kde(x_vals),
-        color="black",
-        label="KDE",
-    )
+    check_zeros = np.zeros(len(vals)).astype(float)
+    if not np.allclose(vals, check_zeros):
+        kde = scipy.stats.gaussian_kde(vals)
+        x_vals = np.linspace(vals.min(), vals.max(), 200)
+        plt.plot(
+            x_vals,
+            kde(x_vals),
+            color="black",
+            label="KDE",
+        )
     # vertical line at the mean
     plt.axvline(
         np.mean(vals),
@@ -412,7 +441,7 @@ def plot_scatter(
 
     vals_x = np.asarray(vals_x, dtype=float)
     vals_y = np.asarray(vals_y, dtype=float)
-    # 2d scatterplot of CV angle (x-axis) and assigned GT conformation index
+    # 2d scatterplot
     # (y-axis) with no lines connecting points:
     plt.scatter(
         vals_x,
@@ -443,12 +472,28 @@ def plot_violin(
     plot_dir: str,
     plot_name: str,
 ):
+    # check that vals are not all zero
+    mask = []
+    for vals in val_lists:
+        check_zeros = np.zeros(len(vals)).astype(float)
+        if np.allclose(vals, check_zeros):
+            mask.append(False)
+        else:
+            mask.append(True)
+
+    # mask out labels
+    labels = np.array(labels, dtype=str)[np.asarray(mask, dtype=bool)].tolist()
+    # mask out val lists
+    val_lists_masked = []
+    for vals, mask_val in zip(val_lists, mask):
+        if mask_val:
+            val_lists_masked.append(vals)
 
     # create a fresh figure sized for the number of datasets
     plt.figure(figsize=(max(8, 0.8 * len(labels)), 6))
     # violin plot of the min-RMSD distribution for each dataset
     parts = plt.violinplot(
-        val_lists,
+        val_lists_masked,
         positions=np.arange(len(labels)),
         showmeans=False,
         showmedians=False,
@@ -460,7 +505,7 @@ def plot_violin(
         body.set_edgecolor("black")
     # overlaid box plot (median, mean, quartiles, whiskers, outliers) per dataset
     plt.boxplot(
-        val_lists,
+        val_lists_masked,
         positions=np.arange(len(labels)),
         widths=0.15,
         patch_artist=True,
@@ -480,9 +525,9 @@ def plot_violin(
     plt.grid(True, which="major", linestyle="--", alpha=0.5, axis="y")
     plt.grid(True, which="minor", linestyle=":", alpha=0.3, axis="y")
     # hline
-    plt.axvline(
+    plt.axhline(
         hline,
-        color="red",
+        color="purple",
         linestyle="--",
         label=hline_label,
     )
@@ -491,6 +536,14 @@ def plot_violin(
         handles=[
             plt.Line2D([0], [0], color="blue", linewidth=2, label="Mean"),
             plt.Line2D([0], [0], color="red", linewidth=2, label="Median"),
+            plt.Line2D(
+                [0],
+                [0],
+                color="purple",
+                linewidth=2,
+                linestyle="--",
+                label="6XOU",
+            ),
         ],
         loc="upper right",
     )
@@ -630,7 +683,10 @@ def main(args):
     for label in args.pred_ensemble_label:
         # get fpath for all_metrics.json (includes pcv)
         fpath = os.path.join(
-            arg.results_dir, args.pred_dir, label, "results/all_metrics.json"
+            args.results_dir,
+            args.pred_subdir,
+            label,
+            "results/all_metrics.json",
         )
         metrics_jsons[label] = fpath
 
@@ -639,11 +695,19 @@ def main(args):
     # Note that the pred ensemble stereochemical calculations are added to
     # the pred ensemble json files
     # So here we write these as they don't exist previously for GT or 6xou
+    ensemble_template = {
+        "conf_stats": {},
+        "ensemble_stats": {},
+    }
     gt_ens = Ensemble_Stats(
         output_dir=args.results_dir,
         pred_ensemble_label="gt",
+        ensemble=ensemble_template,
         verbose=args.verbose,
     )
+    gt_ens.make_results_dir_structure()  # make pred/gt subdir
+    # use pred_filenames to list model files
+    gt_ens.pred_filenames = get_ensemble(gt_ens.gt_confs_dir_pdbs)
     gt_ens_jsonfile = os.path.join(
         gt_ens.pred_confs_dir_label_results,
         "all_metrics.json",
@@ -656,12 +720,22 @@ def main(args):
     orig_6xou_ens = Ensemble_Stats(
         output_dir=args.results_dir,
         pred_ensemble_label="6xou",
+        ensemble=ensemble_template,
         verbose=args.verbose,
+    )
+    # use pred_filenames to list model file
+    orig_6xou_ens.pred_filenames = get_ensemble(
+        os.path.join(
+            orig_6xou_ens.output_dir,
+            "orig_6xou",
+            "pdbs",
+        )
     )
     orig_6xou_ens_jsonfile = os.path.join(
         orig_6xou_ens.pred_confs_dir_label_results,
         "all_metrics.json",
     )
+    orig_6xou_ens.make_results_dir_structure()  # make 6xou pred subdir
     save_dict_to_json(
         orig_6xou_ens.__dict__,
         orig_6xou_ens_jsonfile,
@@ -680,6 +754,7 @@ def main(args):
     }
     for label in args.pred_ensemble_label:
         # Add molprobity summary info to json
+        print("{}".format(label))
         add_geom_to_ensemble_stats(
             metrics_jsons[label],
             pred_stereo_rota_files[label],
@@ -694,44 +769,46 @@ def main(args):
             results = json.load(f)
 
         # keep track to make comparative violinplot
-        ens_geom_lists.rota_outlier_percentage.append(
-            results.conf_stats.rota_outlier_percentage
+        ens_geom_lists["rota_outlier_percentage"].append(
+            results["ensemble"]["conf_stats"]["rota_outlier_percentage"]
         )
-        ens_geom_lists.rama_outlier_percentage.append(
-            results.conf_stats.rama_outlier_percentage
+        ens_geom_lists["rama_outlier_percentage"].append(
+            results["ensemble"]["conf_stats"]["rama_outlier_percentage"]
         )
-        ens_geom_lists.rama_favored_percentage.append(
-            results.conf_stats.rama_favored_percentage
+        ens_geom_lists["rama_favored_percentage"].append(
+            results["ensemble"]["conf_stats"]["rama_favored_percentage"]
         )
-        ens_geom_lists.clashscore.append(results.conf_stats.clashscore)
-        ens_geom_lists.labels.append(label)
-        # Make 2d hists
+        ens_geom_lists["clashscore"].append(
+            results["ensemble"]["conf_stats"]["clashscore"]
+        )
+        ens_geom_lists["labels"].append(label)
+        # Make 1d hists
         # rota_outlier_percentage
         plot_hist(
-            results.conf_stats.rota_outlier_percentage,
+            results["ensemble"]["conf_stats"]["rota_outlier_percentage"],
             "Rotamer outlier percentage",
-            results.pred_confs_dir_label_figures,
+            results["pred_confs_dir_label_results"],
             "rota_outlier_percentage",
         )
         # rama_outlier_percentage
         plot_hist(
-            results.conf_stats.rama_outlier_percentage,
+            results["ensemble"]["conf_stats"]["rama_outlier_percentage"],
             "Ramachandran outlier percentage",
-            results.pred_confs_dir_label_figures,
+            results["pred_confs_dir_label_results"],
             "rama_outlier_percentage",
         )
         # rama_favored percentage
         plot_hist(
-            results.conf_stats.rama_favored_percentage,
+            results["ensemble"]["conf_stats"]["rama_favored_percentage"],
             "Ramachandran favored percentage",
-            results.pred_confs_dir_label_figures,
+            results["pred_confs_dir_label_results"],
             "rama_favored_percentage",
         )
         # clashscore
         plot_hist(
-            results.conf_stats.clashscore,
+            results["ensemble"]["conf_stats"]["clashscore"],
             "Clash Score",
-            results.pred_confs_dir_label_figures,
+            results["pred_confs_dir_label_results"],
             "clashscore",
         )
 
@@ -751,44 +828,46 @@ def main(args):
     with open(geom_jsonfile, "r") as f:
         results = json.load(f)
     # keep track to make comparative violinplot
-    ens_geom_lists.rota_outlier_percentage.append(
-        results.conf_stats.rota_outlier_percentage
+    ens_geom_lists["rota_outlier_percentage"].append(
+        results["ensemble"]["conf_stats"]["rota_outlier_percentage"]
     )
-    ens_geom_lists.rama_outlier_percentage.append(
-        results.conf_stats.rama_outlier_percentage
+    ens_geom_lists["rama_outlier_percentage"].append(
+        results["ensemble"]["conf_stats"]["rama_outlier_percentage"]
     )
-    ens_geom_lists.rama_favored_percentage.append(
-        results.conf_stats.rama_favored_percentage
+    ens_geom_lists["rama_favored_percentage"].append(
+        results["ensemble"]["conf_stats"]["rama_favored_percentage"]
     )
-    ens_geom_lists.clashscore.append(results.conf_stats.clashscore)
-    ens_geom_lists.labels.append("GT")
-    # Make 2d hists
+    ens_geom_lists["clashscore"].append(
+        results["ensemble"]["conf_stats"]["clashscore"]
+    )
+    ens_geom_lists["labels"].append("GT")
+    # Make 1d hists
     # rota_outlier_percentage
     plot_hist(
-        results.conf_stats.rota_outlier_percentage,
+        results["ensemble"]["conf_stats"]["rota_outlier_percentage"],
         "Rotamer outlier percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_results"],
         "rota_outlier_percentage",
     )
     # rama_outlier_percentage
     plot_hist(
-        results.conf_stats.rama_outlier_percentage,
+        results["ensemble"]["conf_stats"]["rama_outlier_percentage"],
         "Ramachandran outlier percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_results"],
         "rama_outlier_percentage",
     )
     # rama_favored percentage
     plot_hist(
-        results.conf_stats.rama_favored_percentage,
+        results["ensemble"]["conf_stats"]["rama_favored_percentage"],
         "Ramachandran favored percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_results"],
         "rama_favored_percentage",
     )
     # clashscore
     plot_hist(
-        results.conf_stats.clashscore,
+        results["ensemble"]["conf_stats"]["clashscore"],
         "Clash Score",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_results"],
         "clashscore",
     )
 
@@ -796,38 +875,44 @@ def main(args):
     # which needs to be ordered by time (rather than CV)
     # rota_outlier_percentage
     plot_scatter(
-        np.arange(len(results.conf_stats.rota_outlier_percentage)),
-        results.conf_stats.rota_outlier_percentage,
+        np.arange(
+            len(results["ensemble"]["conf_stats"]["rota_outlier_percentage"])
+        ),
+        results["ensemble"]["conf_stats"]["rota_outlier_percentage"],
         "GT model index",
         "Rotamer outlier percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_results"],
         "rota_outlier_percentage_progression",
     )
     # rama_outlier_percentage
     plot_scatter(
-        np.arange(len(results.conf_stats.rama_outlier_percentage)),
-        results.conf_stats.rama_outlier_percentage,
+        np.arange(
+            len(results["ensemble"]["conf_stats"]["rama_outlier_percentage"])
+        ),
+        results["ensemble"]["conf_stats"]["rama_outlier_percentage"],
         "GT model index",
         "Ramachandran outlier percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_results"],
         "rama_outlier_percentage_progression",
     )
     # rama_favored percentage
     plot_scatter(
-        np.arange(len(results.conf_stats.rama_favored_percentage)),
-        results.conf_stats.rama_favored_percentage,
+        np.arange(
+            len(results["ensemble"]["conf_stats"]["rama_favored_percentage"])
+        ),
+        results["ensemble"]["conf_stats"]["rama_favored_percentage"],
         "GT model index",
         "Ramachandran favored percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_results"],
         "rama_favored_percentage_progression",
     )
     # clashscore
     plot_scatter(
-        np.arange(len(results.conf_stats.clashscore)),
-        results.conf_stats.clashscore,
+        np.arange(len(results["ensemble"]["conf_stats"]["clashscore"])),
+        results["ensemble"]["conf_stats"]["clashscore"],
         "GT model index",
         "Clash Score",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_results"],
         "clashscore_progression",
     )
 
@@ -846,119 +931,131 @@ def main(args):
     )
     with open(geom_jsonfile, "r") as f:
         results = json.load(f)
-    # Make 2d hists
+    # Make 1d hists
     # rota_outlier_percentage
+    """
+    Can't plot hist for single-model ensemble
     plot_hist(
-        results.conf_stats.rota_outlier_percentage,
+        results["ensemble"]["conf_stats"]["rota_outlier_percentage"],
         "Rotamer outlier percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_figures"],
         "rota_outlier_percentage",
     )
     # rama_outlier_percentage
     plot_hist(
-        results.conf_stats.rama_outlier_percentage,
+        results["ensemble"]["conf_stats"]["rama_outlier_percentage"],
         "Ramachandran outlier percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_figures"],
         "rama_outlier_percentage",
     )
     # rama_favored percentage
     plot_hist(
-        results.conf_stats.rama_favored_percentage,
+        results["ensemble"]["conf_stats"]["rama_favored_percentage"],
         "Ramachandran favored percentage",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_figures"],
         "rama_favored_percentage",
     )
     # clashscore
     plot_hist(
-        results.conf_stats.clashscore,
+        results["ensemble"]["conf_stats"]["clashscore"],
         "Clash Score",
-        results.pred_confs_dir_label_figures,
+        results["pred_confs_dir_label_figures"],
         "clashscore",
     )
-
+    """
     # Make violin-plot/whisker-plots for all ensembles, inc gt
     # Add hlines for recommended value and 6xou value
     # rota_outlier_percentage
     plot_violin(
-        ens_geom_lists.labels,
-        ens_geom_lists.rota_outlier_percentage,
+        ens_geom_lists["labels"],
+        ens_geom_lists["rota_outlier_percentage"],
         "Ensemble",
         "Rotamer Outlier Percentage",
-        results.ensemble_stats.rota_outlier_percentage_avg,  # 6xou PDB value
+        results["ensemble"]["ensemble_stats"][
+            "rota_outlier_percentage_avg"
+        ],  # 6xou PDB value
         "6XOU",
-        results.pred_confs_dir,  # should be okay as GT,6xou created above
+        results["pred_confs_dir"],  # should be okay as GT,6xou created above
         "rota_outlier_percentage",
     )
     # rama_outlier_percentage
     plot_violin(
-        ens_geom_lists.labels,
-        ens_geom_lists.rama_outlier_percentage,
+        ens_geom_lists["labels"],
+        ens_geom_lists["rama_outlier_percentage"],
         "Ensemble",
         "Ramuchandran Outlier Percentage",
-        results.ensemble_stats.rama_outlier_percentage_avg,  # 6xou PDB value
+        results["ensemble"]["ensemble_stats"][
+            "rama_outlier_percentage_avg"
+        ],  # 6xou PDB value
         "6XOU",
-        results.pred_confs_dir,  # should be okay as GT,6xou created above
+        results["pred_confs_dir"],  # should be okay as GT,6xou created above
         "rama_outlier_percentage",
     )
     # rama_favored_percentage
     plot_violin(
-        ens_geom_lists.labels,
-        ens_geom_lists.rama_favored_percentage,
+        ens_geom_lists["labels"],
+        ens_geom_lists["rama_favored_percentage"],
         "Ensemble",
         "Ramuchandran Favored Percentage",
-        results.ensemble_stats.rama_outlier_percentage_avg,  # 6xou PDB value
+        results["ensemble"]["ensemble_stats"][
+            "rama_favored_percentage_avg"
+        ],  # 6xou PDB value
         "6XOU",
-        results.pred_confs_dir,  # should be okay as GT,6xou created above
+        results["pred_confs_dir"],  # should be okay as GT,6xou created above
         "rama_favored_percentage",
     )
     # clashscore
     plot_violin(
-        ens_geom_lists.labels,
-        ens_geom_lists.clashscore,
+        ens_geom_lists["labels"],
+        ens_geom_lists["clashscore"],
         "Ensemble",
         "Clash Score",
-        results.ensemble_stats.clashscore_avg,  # 6xou PDB value
+        results["ensemble"]["ensemble_stats"][
+            "clashscore_avg"
+        ],  # 6xou PDB value
         "6XOU",
-        results.pred_confs_dir,  # should be okay as GT,6xou created above
+        results["pred_confs_dir"],  # should be okay as GT,6xou created above
         "clashscore",
     )
 
     # Make and save a csv table of all geom stats
     # add 6xou to dict and then grab average vals to csv
-    ens_geom_lists.rota_outlier_percentage.append(
-        results.conf_stats.rota_outlier_percentage
+    ens_geom_lists["rota_outlier_percentage"].append(
+        results["ensemble"]["conf_stats"]["rota_outlier_percentage"]
     )
-    ens_geom_lists.rama_outlier_percentage.append(
-        results.conf_stats.rama_outlier_percentage
+    ens_geom_lists["rama_outlier_percentage"].append(
+        results["ensemble"]["conf_stats"]["rama_outlier_percentage"]
     )
-    ens_geom_lists.rama_favored_percentage.append(
-        results.conf_stats.rama_favored_percentage
+    ens_geom_lists["rama_favored_percentage"].append(
+        results["ensemble"]["conf_stats"]["rama_favored_percentage"]
     )
-    ens_geom_lists.clashscore.append(results.conf_stats.clashscore)
-    ens_geom_lists.labels.append("6XOU")
+    ens_geom_lists["clashscore"].append(
+        results["ensemble"]["conf_stats"]["clashscore"]
+    )
+    ens_geom_lists["labels"].append("6XOU")
 
     # get average values to put in CSV file table
     ens_geom_lists_csv = {
-        "labels": ens_geom_lists.labels,
+        "labels": ens_geom_lists["labels"],
         "rota_outlier_percentage": [
             float(np.average(ens))
-            for ens in ens_geom_lists.rota_outlier_percentage
+            for ens in ens_geom_lists["rota_outlier_percentage"]
         ],
         "rama_outlier_percentage": [
             float(np.average(ens))
-            for ens in ens_geom_lists.rama_outlier_percentage
+            for ens in ens_geom_lists["rama_outlier_percentage"]
         ],
         "rama_favored_percentage": [
             float(np.average(ens))
-            for ens in ens_geom_lists.rama_favored_percentage
+            for ens in ens_geom_lists["rama_favored_percentage"]
         ],
         "clashscore": [
-            float(np.average(ens)) for ens in ens_geom_lists.clashscore
+            float(np.average(ens)) for ens in ens_geom_lists["clashscore"]
         ],
     }
     # Save csv file table (averaged over ensemble if applicable)
     csv_filename = os.path.join(
-        results.pred_confs_dir,
+        results["pred_confs_dir"],
         "all_geom_metrics.csv",
     )
     pd.DataFrame.from_dict(data=ens_geom_lists_csv).to_csv(csv_filename)
