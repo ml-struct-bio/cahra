@@ -787,28 +787,28 @@ def main(args):
         plot_hist(
             results["ensemble"]["conf_stats"]["rota_outlier_percentage"],
             "Rotamer outlier percentage",
-            results["pred_confs_dir_label_results"],
+            results["pred_confs_dir_label_figures"],
             "rota_outlier_percentage",
         )
         # rama_outlier_percentage
         plot_hist(
             results["ensemble"]["conf_stats"]["rama_outlier_percentage"],
             "Ramachandran outlier percentage",
-            results["pred_confs_dir_label_results"],
+            results["pred_confs_dir_label_figures"],
             "rama_outlier_percentage",
         )
         # rama_favored percentage
         plot_hist(
             results["ensemble"]["conf_stats"]["rama_favored_percentage"],
             "Ramachandran favored percentage",
-            results["pred_confs_dir_label_results"],
+            results["pred_confs_dir_label_figures"],
             "rama_favored_percentage",
         )
         # clashscore
         plot_hist(
             results["ensemble"]["conf_stats"]["clashscore"],
             "Clash Score",
-            results["pred_confs_dir_label_results"],
+            results["pred_confs_dir_label_figures"],
             "clashscore",
         )
 
@@ -846,28 +846,28 @@ def main(args):
     plot_hist(
         results["ensemble"]["conf_stats"]["rota_outlier_percentage"],
         "Rotamer outlier percentage",
-        results["pred_confs_dir_label_results"],
+        results["pred_confs_dir_label_figures"],
         "rota_outlier_percentage",
     )
     # rama_outlier_percentage
     plot_hist(
         results["ensemble"]["conf_stats"]["rama_outlier_percentage"],
         "Ramachandran outlier percentage",
-        results["pred_confs_dir_label_results"],
+        results["pred_confs_dir_label_figures"],
         "rama_outlier_percentage",
     )
     # rama_favored percentage
     plot_hist(
         results["ensemble"]["conf_stats"]["rama_favored_percentage"],
         "Ramachandran favored percentage",
-        results["pred_confs_dir_label_results"],
+        results["pred_confs_dir_label_figures"],
         "rama_favored_percentage",
     )
     # clashscore
     plot_hist(
         results["ensemble"]["conf_stats"]["clashscore"],
         "Clash Score",
-        results["pred_confs_dir_label_results"],
+        results["pred_confs_dir_label_figures"],
         "clashscore",
     )
 
@@ -881,7 +881,7 @@ def main(args):
         results["ensemble"]["conf_stats"]["rota_outlier_percentage"],
         "GT model index",
         "Rotamer outlier percentage",
-        results["pred_confs_dir_label_results"],
+        results["pred_confs_dir_label_figures"],
         "rota_outlier_percentage_progression",
     )
     # rama_outlier_percentage
@@ -892,7 +892,7 @@ def main(args):
         results["ensemble"]["conf_stats"]["rama_outlier_percentage"],
         "GT model index",
         "Ramachandran outlier percentage",
-        results["pred_confs_dir_label_results"],
+        results["pred_confs_dir_label_figures"],
         "rama_outlier_percentage_progression",
     )
     # rama_favored percentage
@@ -903,7 +903,7 @@ def main(args):
         results["ensemble"]["conf_stats"]["rama_favored_percentage"],
         "GT model index",
         "Ramachandran favored percentage",
-        results["pred_confs_dir_label_results"],
+        results["pred_confs_dir_label_figures"],
         "rama_favored_percentage_progression",
     )
     # clashscore
@@ -912,7 +912,7 @@ def main(args):
         results["ensemble"]["conf_stats"]["clashscore"],
         "GT model index",
         "Clash Score",
-        results["pred_confs_dir_label_results"],
+        results["pred_confs_dir_label_figures"],
         "clashscore_progression",
     )
 
