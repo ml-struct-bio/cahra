@@ -38,6 +38,7 @@ import cahra_metrics.validate_ens.make_ensemble_pdb
 import cahra_metrics.minrmsd.calc_min_rmsd_metrics
 import cahra_metrics.pcv.calc_pcv
 import cahra_metrics.stereochemistry.stereochem_analysis
+import cahra_metrics.analyse_aligned.ensemble_maps
 
 
 def get_cahra_metrics_parent() -> Path:
@@ -72,6 +73,7 @@ def main():
         cahra_metrics.minrmsd.calc_min_rmsd_metrics,
         cahra_metrics.pcv.calc_pcv,
         cahra_metrics.stereochemistry.stereochem_analysis,
+        cahra_metrics.analyse_aligned.ensemble_maps,
     ]
 
     module_helptext = [
@@ -98,6 +100,7 @@ def main():
             " and 6xou so that plotting of stereochemistry is uniform."
             " Includes making the stereochemistry plots."
         ),
+        "Create density maps and difference maps from aligned ensembles.",
     ]
 
     for helptext, module in zip(module_helptext, modules):

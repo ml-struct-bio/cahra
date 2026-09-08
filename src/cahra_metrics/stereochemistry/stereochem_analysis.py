@@ -423,7 +423,7 @@ def plot_hist(vals, xlabel: str, plot_dir: str, plot_name: str):
     )
     plt.xlabel(xlabel)
     plt.ylabel("Density")
-    plt.legend()
+    plt.legend(loc="upper left", bbox_to_anchor=(1.02, 1))
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, plot_name + ".png"), dpi=300)
     plt.savefig(os.path.join(plot_dir, plot_name + ".pdf"))
