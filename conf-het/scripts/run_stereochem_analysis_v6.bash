@@ -4,7 +4,7 @@ METRICS_LABEL="_v6"
 LOG_DIR="stereochem_analysis${METRICS_LABEL}"
 RESULTS_DIR="metric_calculation${METRICS_LABEL}"
 
-mkdir $LOG_DIR
+mkdir -p $LOG_DIR
 
 STEREOCHEM_DIR="run_rota_rama_clash${METRICS_LABEL}"
 
