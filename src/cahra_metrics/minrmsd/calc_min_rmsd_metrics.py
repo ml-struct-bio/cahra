@@ -284,9 +284,9 @@ def make_over_under_represent_het_plot(
     plot_dir: str,
     avg_over: int = 100,
 ):
-    # +ve value of diff means heterogeneity under-estimated
-    # -ve value of diff means heterogeneity over-estimated
-    diff = rmsf_gt - rmsf_pred
+    # +ve value of diff means heterogeneity over-estimated
+    # -ve value of diff means heterogeneity under-estimated
+    diff = rmsf_pred - rmsf_gt
     avgs = []
     for i, atom in enumerate(range(len(diff))):
         if i < avg_over:

@@ -39,6 +39,7 @@ import cahra_metrics.minrmsd.calc_min_rmsd_metrics
 import cahra_metrics.pcv.calc_pcv
 import cahra_metrics.stereochemistry.stereochem_analysis
 import cahra_metrics.analyse_aligned.ensemble_maps
+import cahra_metrics.analyse_aligned.min_rmsd_displacement
 
 
 def get_cahra_metrics_parent() -> Path:
@@ -74,6 +75,7 @@ def main():
         cahra_metrics.pcv.calc_pcv,
         cahra_metrics.stereochemistry.stereochem_analysis,
         cahra_metrics.analyse_aligned.ensemble_maps,
+        cahra_metrics.analyse_aligned.min_rmsd_displacement,
     ]
 
     module_helptext = [
@@ -101,6 +103,34 @@ def main():
             " Includes making the stereochemistry plots."
         ),
         "Create density maps and difference maps from aligned ensembles.",
+        (
+            "Determine the distances between atoms in the min-RMSD-aligned "
+            " pred ensemble"
+            " and their min-RMSD GT model. Make violinplots for overall,"
+            " backbone only and"
+            " sidechain only. Also make violinplots for each pred ensemble"
+            " (including GT)"
+            " showing the b-factor values for each atom, as well as for"
+            " backbone only and"
+            "sidechain only. Outputs a pdb file for each model in each"
+            " predicted ensemble"
+            " where the b-factor column is filled by the distance to the"
+            " same atom in the"
+            " min-RMSD GT model. Also outputs 1 pdb file for the GT model"
+            " where b-factor"
+            " column is filled with the b-factor of each atom in the ensemble."
+            " Also outputs 1 pdb file for each pred ensemble where the"
+            " b-factor column is"
+            " filled with the b-factor of each atom in the predicted"
+            " ensemble."
+            " Also outputs 1 pdb file for each pred ensemble where"
+            " the GT model with"
+            " the min-RMSD to the pred model (ie: the one saved with"
+            " b-factors)"
+            " is saved with the b-factor column filled by the absolute"
+            " difference in b-factor."
+            " These pdbs may be useful for visualisation."
+        ),
     ]
 
     for helptext, module in zip(module_helptext, modules):
