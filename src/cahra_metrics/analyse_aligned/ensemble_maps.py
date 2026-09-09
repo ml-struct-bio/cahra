@@ -240,7 +240,7 @@ def save_gemmi_grid(ensemble_density, output_path="ensemble_map.mrc"):
     ccp4.write_ccp4_map(output_path)
 
 
-def make_map_dir(dirname: str):
+def make_dir(dirname: str):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
 
@@ -314,7 +314,7 @@ def main(args):
             os.path.dirname(pred_ensemble_dir),
             "ensemble_map",
         )
-        make_map_dir(map_dir)
+        make_dir(map_dir)
         save_gemmi_grid(
             pred_map,
             os.path.join(
@@ -327,7 +327,7 @@ def main(args):
             os.path.dirname(pred_ensemble_dir),
             "ensemble_diffmap",
         )
-        make_map_dir(map_dir)
+        make_dir(map_dir)
         save_gemmi_grid(
             diff_map,
             os.path.join(
@@ -340,7 +340,7 @@ def main(args):
         os.path.dirname(args.truth_ensemble_dir),
         "ensemble_map",
     )
-    make_map_dir(map_dir)
+    make_dir(map_dir)
     save_gemmi_grid(
         gt_map,
         os.path.join(
