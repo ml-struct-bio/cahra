@@ -287,3 +287,22 @@ def get_stereochem_json_files(
     if verbose:
         print(jsons)
     return jsons
+
+
+def shorten_label(label: str) -> str:
+    parts = label.split("-")
+    # check if label has more than two parts and reduce if so
+    if len(parts) > 2:
+        new_label = parts[-2] + "-" + parts[-1]
+    else:
+        new_label = label
+    return new_label
+
+
+def shorten_labels(labels: list[str]) -> list[str]:
+    # labels in format a-b-X
+    # shorten to b-X
+    short_labels = []
+    for label in labels:
+        short_labels.append(shorten_label(label))
+    return short_labels

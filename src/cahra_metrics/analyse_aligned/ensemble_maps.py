@@ -36,6 +36,7 @@ import gemmi
 from cahra_metrics.utilities.utils import (
     # load_dict_from_json,
     get_ensemble,
+    make_dir,
 )
 
 
@@ -238,11 +239,6 @@ def save_gemmi_grid(ensemble_density, output_path="ensemble_map.mrc"):
     ccp4.grid = ensemble_density
     ccp4.update_ccp4_header()
     ccp4.write_ccp4_map(output_path)
-
-
-def make_dir(dirname: str):
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
 
 
 def get_name():

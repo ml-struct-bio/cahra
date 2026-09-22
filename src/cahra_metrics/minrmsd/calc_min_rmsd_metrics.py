@@ -261,20 +261,24 @@ def calc_lfc(rmsf_gt, rmsf_pred):
     return lfc, lfc_stddev, abs_diff_rmsf
 
 
-def make_plot_lfc(ad_rmsf, plot_dir: str):
+def make_plot_lfc(
+    ad_rmsf,
+    plot_dir: str,
+    plotname: str = "abs_diffrmsf",
+    label="|$\\Delta$RMSF|",
+):
     # TODO add docstring with info about non-H atom indices
-    plt.plot(
-        range(len(ad_rmsf)), ad_rmsf, color="blue", label="|$\\Delta$RMSF|"
-    )
+    plt.plot(range(len(ad_rmsf)), ad_rmsf, color="blue", label=label)
     plt.xlabel("Atom index")
     plt.ylabel("RMSF ($\\AA$)")
+    # These are indices for a pdb without hydrogens
     plt.axvspan(79, 2175, zorder=0, alpha=0.2, color="orange", label="D1")
     plt.axvspan(4346, 4366, zorder=0, alpha=0.2, color="blue", label="LNK")
     plt.axvspan(6465, 8085, zorder=0, alpha=0.2, color="green", label="D4")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(plot_dir, "rmsf.png"), dpi=300)
-    plt.savefig(os.path.join(plot_dir, "rmsf.pdf"))
+    plt.savefig(os.path.join(plot_dir, plotname + ".png"), dpi=300)
+    plt.savefig(os.path.join(plot_dir, plotname + ".pdf"))
     plt.clf()
 
 
@@ -699,10 +703,12 @@ def make_rmsd_heatmap(
     gt_indices = get_idx_from_filenames(gt_filenames)
     plt.imshow(
         rmsds_arr,
-        origin="lower",
+        origin="upper",
         aspect="auto",
         cmap="nipy_spectral",
         interpolation="nearest",
+        vmin=1.5,
+        vmax=9.0,
     )
     x_label_positions = np.arange(len(gt_indices) + 1, step=10)
     y_label_positions = np.arange(len(rmsds_arr) + 1, step=10)
@@ -745,10 +751,12 @@ def make_rmsd_heatmap_ordered_by_CV(
     gt_indices = get_idx_from_filenames(gt_filenames)
     plt.imshow(
         rmsds_arr[order],  # reorder pred confs by CV
-        origin="lower",
+        origin="upper",
         aspect="auto",
         cmap="nipy_spectral",
         interpolation="nearest",
+        vmin=1.5,
+        vmax=9.0,
     )
     step = 10
     x_label_positions = np.arange(len(gt_indices) + 1, step=step)
@@ -1014,7 +1022,7 @@ def main(args):
     )
 
     pred_u = mda.Universe(
-        gt_ensemble[0],
+        pred_ensemble[0],  # gt_ensemble[0],
         # using GT for topology
         pred_ensemble,
         in_memory=True,
@@ -1023,7 +1031,7 @@ def main(args):
     # make a copy of pred_u which we later fill with the conformations once they are
     # optimally aligned to ground truth ensemble
     pred_u_copy = mda.Universe(
-        gt_ensemble[0],
+        pred_ensemble[0],  # gt_ensemble[0],
         # using GT for topology
         pred_ensemble,
         in_memory=True,
@@ -1247,6 +1255,20 @@ def main(args):
         abs_diff_rmsf,
         results.pred_confs_dir_label_figures,
     )
+    # Save to file and plot the rmsf of the pred ensemble
+    make_plot_lfc(
+        rmsf_pred.results.rmsf,
+        results.pred_confs_dir_label_figures,
+        plotname="pred_rmsf",
+        label="RMSF",
+    )
+    # Save to file and plot the rmsf of the gt ensemble
+    make_plot_lfc(
+        rmsf_gt.results.rmsf,
+        results.pred_confs_dir_label_figures,
+        plotname="gt_rmsf",
+        label="GT_RMSF",
+    )
     make_over_under_represent_het_plot(
         rmsf_gt.results.rmsf,
         rmsf_pred.results.rmsf,
@@ -1281,7 +1303,6 @@ def main(args):
     make_plot_assignment_ordered_by_CV(
         pred_u_rmsd_min_aligned,
         pred_u_rmsd_min_dict["gt_index"],
-        pred_u_rmsd_min_dict["pred_index"],
         results.pred_confs_dir_label_figures,
     )
     make_plot_occupancy(

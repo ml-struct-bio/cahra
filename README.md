@@ -44,8 +44,13 @@ bash calc_pcv6.bash
 wait $!
 bash make_ensemble_pdbv6.bash
 wait $!
-run_gt_pred_rota_rama_clash_v6.sh
-wait$!
+bash run_gt_pred_rota_rama_clash_v6.sh
+wait $!
+bash run_ensemble_maps_v6.bash
+wait $!
+bash run_min_rmsd_displacement_v6.sh
+wait $!
+bash run_ensemble_maps_v6.bash
 popd
 ```
 

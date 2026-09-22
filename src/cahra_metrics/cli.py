@@ -40,6 +40,7 @@ import cahra_metrics.pcv.calc_pcv
 import cahra_metrics.stereochemistry.stereochem_analysis
 import cahra_metrics.analyse_aligned.ensemble_maps
 import cahra_metrics.analyse_aligned.min_rmsd_displacement
+import cahra_metrics.analyse_aligned.plot_rmsf
 
 
 def get_cahra_metrics_parent() -> Path:
@@ -76,6 +77,7 @@ def main():
         cahra_metrics.stereochemistry.stereochem_analysis,
         cahra_metrics.analyse_aligned.ensemble_maps,
         cahra_metrics.analyse_aligned.min_rmsd_displacement,
+        cahra_metrics.analyse_aligned.plot_rmsf,
     ]
 
     module_helptext = [
@@ -131,6 +133,7 @@ def main():
             " difference in b-factor."
             " These pdbs may be useful for visualisation."
         ),
+        "Plot the rmsf",
     ]
 
     for helptext, module in zip(module_helptext, modules):

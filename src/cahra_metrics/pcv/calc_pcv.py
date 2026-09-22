@@ -36,6 +36,7 @@ import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy
 import random
 from tabulate import tabulate  # type: ignore
 
@@ -43,6 +44,7 @@ from cahra_metrics.utilities.utils import (
     get_ensemble,
     save_dict_to_json,
     extract_min_rmsd_values,
+    shorten_labels,
 )
 
 # ensure reproducibility
@@ -124,6 +126,40 @@ def add_arguments(parser: argparse.ArgumentParser):
 
 def get_name():
     return "calc_pcv"
+
+
+def add_kde_contour(
+    axis, x, y, xmin, xmax, ymin, ymax, title, check_lims: bool = False
+):
+    """Scatter points + smooth KDE density contour overlay."""
+    # Convert torch tensors to numpy arrays (no-op if already numpy)
+    x = np.asarray(x.detach().cpu().numpy() if hasattr(x, "detach") else x)
+    y = np.asarray(y.detach().cpu().numpy() if hasattr(y, "detach") else y)
+
+    # Kernel density estimate of the 2D distribution
+    kde = scipy.stats.gaussian_kde(np.vstack([x, y]))
+    # grid over the data range
+    # replace mgrid with linspace and meshgrid
+    grid_x = np.linspace(xmin, xmax, 100)
+    grid_y = np.linspace(ymin, ymax, 100)
+    xx, yy = np.meshgrid(grid_x, grid_y)
+    # xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j
+    positions = np.vstack([xx.ravel(), yy.ravel()])
+    density = kde(positions).reshape(xx.shape)
+
+    # colored filled contour of the KDE
+    cf = axis.contourf(
+        xx,
+        yy,
+        density,
+        levels=15,
+        cmap="viridis",
+        alpha=0.5,
+    )
+    # scatter points on top
+    axis.scatter(x, y, c="red", s=8, edgecolor="black", linewidth=0.2)
+    axis.set_title(title, fontsize=14)
+    return cf
 
 
 def compute_pca(atomic_models, max_rank=50):
@@ -489,22 +525,132 @@ def main(args):
 
     # gt
     coeffs = u_gt @ np.diag(s_gt)
-    ax[0].scatter(coeffs[:, pc0], coeffs[:, pc1], c=np.arange(coeffs.shape[0]))
-    ax[0].set_title("PCA of GT frames")
+    ax[0].scatter(
+        coeffs[:, pc0], coeffs[:, pc1]
+    )  # , c=np.arange(coeffs.shape[0]))
+    ax[0].set_title("PCA of GT models")
     # pred ensembles
     for idx, (label, pred_ensemble, s) in enumerate(
         zip(args.pred_ensemble_label, pred_ensembles_t, s_pred)
     ):
         coeffs_pred_ensemble = project_frames_to_pca(pred_ensemble, vh_gt)
-        sc = ax[idx + 1].scatter(
+        sc = ax[idx + 1].scatter(  # noqa: F841
             coeffs_pred_ensemble[:, pc0],
             coeffs_pred_ensemble[:, pc1],
-            c=np.arange(coeffs_pred_ensemble.shape[0]),
+            # c=np.arange(coeffs_pred_ensemble.shape[0]),
         )
         ax[idx + 1].set_title("PCA of {} models".format(label))
-        fig.colorbar(sc, ax=ax[idx + 1], label="Frame index")
+        # fig.colorbar(sc, ax=ax[idx + 1], label="Model index")
     plt.savefig(os.path.join(pred_confs_dir, "pcv_projection.png"), dpi=300)
     plt.savefig(os.path.join(pred_confs_dir, "pcv_projection.pdf"))
+    plt.clf()
+
+    # Also make rectangular version for slides
+    # plot_projection_onto_GT
+    n_plots = len(args.pred_ensemble_label) + 1  # +1 for GT projection
+    ncols = 5
+    nrows = int(np.ceil(n_plots / ncols))  # 3 rows for 15 plots
+    fig, ax = plt.subplots(
+        nrows,
+        ncols,
+        figsize=(5 * ncols, 5 * nrows),
+        layout="compressed",
+        sharex=True,
+        sharey=True,
+    )
+    ax = ax.flatten()  # index as a flat 1D array
+    pc0 = 0
+    pc1 = 1
+
+    # gt
+    coeffs = u_gt @ np.diag(s_gt)
+    xmin_lim = 0.0
+    ymin_lim = 0.0
+    xmax_lim = 0.0
+    ymax_lim = 0.0
+    # find range for contour plotting
+    x = np.asarray(
+        coeffs[:, pc0].detach().cpu().numpy()
+        if hasattr(coeffs[:, pc0], "detach")
+        else coeffs[:, pc0]
+    )
+    y = np.asarray(
+        coeffs[:, pc1].detach().cpu().numpy()
+        if hasattr(coeffs[:, pc1], "detach")
+        else coeffs[:, pc1]
+    )
+    xmin, xmax = x.min(), x.max()
+    ymin, ymax = y.min(), y.max()
+    if xmin < xmin_lim:
+        xmin_lim = xmin
+    if xmax > xmax_lim:
+        xmax_lim = xmax
+    if ymin < ymin_lim:
+        ymin_lim = ymin
+    if ymax > ymax_lim:
+        ymax_lim = ymax
+    # check limits also for each pred ensembles
+    for pred_ensemble in pred_ensembles_t:
+        coeffs_pred_ensemble = project_frames_to_pca(pred_ensemble, vh_gt)
+        x = np.asarray(
+            coeffs_pred_ensemble[:, pc0].detach().cpu().numpy()
+            if hasattr(coeffs_pred_ensemble[:, pc0], "detach")
+            else coeffs_pred_ensemble[:, pc0]
+        )
+        y = np.asarray(
+            coeffs_pred_ensemble[:, pc1].detach().cpu().numpy()
+            if hasattr(coeffs_pred_ensemble[:, pc1], "detach")
+            else coeffs_pred_ensemble[:, pc1]
+        )
+        xmin, xmax = x.min(), x.max()
+        ymin, ymax = y.min(), y.max()
+        if xmin < xmin_lim:
+            xmin_lim = xmin
+        if xmax > xmax_lim:
+            xmax_lim = xmax
+        if ymin < ymin_lim:
+            ymin_lim = ymin
+        if ymax > ymax_lim:
+            ymax_lim = ymax
+
+    # Add contour+scatter for GT
+    add_kde_contour(
+        ax[0],
+        coeffs[:, pc0],
+        coeffs[:, pc1],
+        xmin_lim,
+        xmax_lim,
+        ymin_lim,
+        ymax_lim,
+        "PCA of GT frames",
+    )
+
+    # # Add contour+scatter for pred ensembles
+    for idx, (label, pred_ensemble, s) in enumerate(
+        zip(args.pred_ensemble_label, pred_ensembles_t, s_pred)
+    ):
+        coeffs_pred_ensemble = project_frames_to_pca(pred_ensemble, vh_gt)
+        cf = add_kde_contour(  # noqa: F841
+            ax[idx + 1],
+            coeffs_pred_ensemble[:, pc0],
+            coeffs_pred_ensemble[:, pc1],
+            xmin_lim,
+            xmax_lim,
+            ymin_lim,
+            ymax_lim,
+            "PCA of {} models".format(label),
+            check_lims=True,
+        )
+        # fig.colorbar(cf, ax=ax[idx + 1], label="Model density")
+
+    # hide any unused subplot axes
+    for a in ax[n_plots:]:
+        a.set_visible(False)
+
+    plt.savefig(
+        os.path.join(pred_confs_dir, "pcv_projection_square.png"), dpi=300
+    )
+    plt.savefig(os.path.join(pred_confs_dir, "pcv_projection_square.pdf"))
     plt.clf()
 
     # STEP 6 - for now print out the summary statistics at end of this script
@@ -673,7 +819,7 @@ def main(args):
             rmsd_min_lists.append(min_rmsd_values)
 
     make_plot_rmsd_violin(
-        args.pred_ensemble_label,
+        shorten_labels(args.pred_ensemble_label),
         rmsd_min_lists,
         pred_confs_dir,
     )

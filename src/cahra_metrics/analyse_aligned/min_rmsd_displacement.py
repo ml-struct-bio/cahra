@@ -28,6 +28,7 @@ https://opensource.org/license/mit
 
 import argparse
 import os
+import json
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -35,6 +36,7 @@ import gemmi
 
 from cahra_metrics.utilities.utils import (
     make_dir,
+    shorten_labels,
 )
 
 
@@ -82,7 +84,15 @@ def add_arguments(parser: argparse.ArgumentParser):
 def rmsf_to_bfac(rmsfs: list[float]):
     scalar_mult = 8.0 * np.pi * np.pi / 3.0
     bfac = scalar_mult * np.power(np.array(rmsfs, dtype=float), 2)
-    return bfac.tolist()
+    bfac = bfac.tolist()
+    # round the bfactor values to 2d.p.
+    bfac = [round(val, 2) for val in bfac]
+    return bfac
+
+
+def rmsf_round(rmsfs: list[float]):
+    rmsfs = [round(val, 2) for val in rmsfs]
+    return rmsfs
 
 
 def set_b_fac_atomlist(st: gemmi.Structure, bfacs: list[float]):
@@ -95,12 +105,12 @@ def set_b_fac_atomlist(st: gemmi.Structure, bfacs: list[float]):
 
 
 def save_b_fac_pdb(
-    pdbfile: str,
+    dirname: str,
+    pdbsavename: str,
     st: gemmi.Structure,
     subdir: str,
     bfacs: list[float],
 ):
-    dirpath, pdb_name = os.path.split(pdbfile)
     # check whether bfacs are passed
     # if not, don't update them
     if bfacs:
@@ -108,15 +118,17 @@ def save_b_fac_pdb(
             st,
             bfacs,
         )
+    else:
+        bfac_st = st
 
     bfac_dir = os.path.join(
-        os.path.dirname(dirpath),
+        os.path.dirname(dirname),
         subdir,
     )
     make_dir(bfac_dir)
     bfac_file = os.path.join(
         bfac_dir,
-        pdb_name,
+        pdbsavename,
     )
 
     bfac_st.write_pdb(bfac_file)
@@ -272,7 +284,7 @@ def main(args):
     residue_mask: list[int] = []  # fill with residue index for each atom
 
     # Loop over the pred ensembles
-    for i, (json, label) in enumerate(
+    for i, (json_file, label) in enumerate(
         zip(
             args.pred_ensemble_json,
             args.pred_ensemble_label,
@@ -280,9 +292,9 @@ def main(args):
     ):
         # STEP 2 - Open the json file
         if args.verbose:
-            print("Loading json: {}".format(json))
+            print("Loading json: {}".format(json_file))
             print("Label: {}".format(label))
-        with open(json, "r") as f:
+        with open(json_file, "r") as f:
             results = json.load(f)
 
         # collect all min_rmsd_displacements for all models in ensemble
@@ -307,9 +319,11 @@ def main(args):
             # and the min-RMSD GT model
             # There will be 1 model in each pdb
             atom_distances = []
+            residue_rmsfs = []
             for pred_model, gt_model in zip(pred_st, gt_st):
                 for pred_chain, gt_chain in zip(pred_model, gt_model):
                     for pred_res, gt_res in zip(pred_chain, gt_chain):
+                        residue_rmsf = []
                         for pred_atom, gt_atom in zip(pred_res, gt_res):
                             pred_pos = np.array(
                                 [
@@ -325,9 +339,14 @@ def main(args):
                                     gt_atom.pos.z,
                                 ]
                             )
+                            # not that we only keep 2d.p. for distance
                             atom_distance = round(
-                                float(np.absolute(pred_pos - gt_pos)),
-                                1,
+                                float(
+                                    np.absolute(
+                                        np.linalg.norm(pred_pos - gt_pos)
+                                    )
+                                ),
+                                2,
                             )
                             atom_distances.append(atom_distance)
                             min_rmsd_disp.append(atom_distance)
@@ -352,6 +371,10 @@ def main(args):
                             # to the b-factor column for pred model
                             pred_atom.b_iso = atom_distance
 
+                        residue_rmsfs.append(np.average(residue_rmsf))
+
+            # Make per-residue LFC plot
+
             # TODO Add per model min-RMSD model atom distances to json?
 
             # TODO Save updated json?
@@ -359,7 +382,8 @@ def main(args):
             # Save pred_pdb atomic model with b-factor col filled
             # formulate save directory and fname from pred_pdb filename
             save_b_fac_pdb(
-                pred_pdb,
+                os.path.dirname(pred_pdb),
+                os.path.basename(pred_pdb),
                 pred_st,
                 "atom_dist",
                 [],
@@ -371,9 +395,15 @@ def main(args):
             gt_bfacs = rmsf_to_bfac(
                 results["ensemble"]["ensemble_stats"]["gt_rmsf"]
             )
+            gt_rmsfs = rmsf_round(
+                results["ensemble"]["ensemble_stats"]["gt_rmsf"]
+            )
 
             # Load RMSF for pred models and convert to b-factor
             pred_bfacs = rmsf_to_bfac(
+                results["ensemble"]["ensemble_stats"]["pred_rmsf"]
+            )
+            pred_rmsfs = rmsf_round(
                 results["ensemble"]["ensemble_stats"]["pred_rmsf"]
             )
 
@@ -381,12 +411,17 @@ def main(args):
             diff_bfacs = np.array(pred_bfacs, dtype=float) - np.array(
                 gt_bfacs, dtype=float
             )
+            diff_rmsfs = np.array(pred_rmsfs, dtype=float) - np.array(
+                gt_rmsfs, dtype=float
+            )
 
             # Compute abs difference in b-factor (pred-GT)
             abs_diff_bfacs = np.absolute(diff_bfacs).tolist()
+            abs_diff_rmsfs = np.absolute(diff_rmsfs).tolist()
 
             # Negative vals can be used for plots but not for pdbs
             diff_bfacs = diff_bfacs.tolist()
+            diff_rmsfs = diff_rmsfs.tolist()
 
             # If first iteration, save an updated PDB file for GT
             # b-factor additions
@@ -394,10 +429,19 @@ def main(args):
                 bfacs.append(gt_bfacs)
                 bfacs_labels.append("GT")
                 save_b_fac_pdb(
-                    results["gt_filenames"][min_rmsd_idx],
+                    os.path.dirname(results["gt_filenames"][min_rmsd_idx]),
+                    os.path.basename(results["gt_filenames"][min_rmsd_idx]),
                     gt_st,
                     "b_facs",
                     gt_bfacs,
+                )
+                # save gt rmsfs values into pdb
+                save_b_fac_pdb(
+                    os.path.dirname(results["gt_filenames"][min_rmsd_idx]),
+                    os.path.basename(results["gt_filenames"][min_rmsd_idx]),
+                    gt_st,
+                    "rmsfs",
+                    gt_rmsfs,
                 )
 
             # If first iteration of pred_ensemble
@@ -411,10 +455,19 @@ def main(args):
                 # abs b-factor differences
                 # This depends on pred_ens, so put in pred subdir
                 save_b_fac_pdb(
-                    pred_pdb,
+                    os.path.dirname(pred_pdb),
+                    os.path.basename(results["gt_filenames"][min_rmsd_idx]),
                     gt_st,
                     "b_facs_absdiff",
                     abs_diff_bfacs,
+                )
+                # save abs diff rmsfs in gt pdb
+                save_b_fac_pdb(
+                    os.path.dirname(pred_pdb),
+                    os.path.basename(results["gt_filenames"][min_rmsd_idx]),
+                    gt_st,
+                    "rmsfs_absdiff",
+                    abs_diff_rmsfs,
                 )
 
                 # Can't save negative b-factors to pdb file?
@@ -426,22 +479,31 @@ def main(args):
                 # but will not always be super close for qual
                 # eval, so don't rely on that
                 save_b_fac_pdb(
-                    pred_pdb,
+                    os.path.dirname(pred_pdb),
+                    os.path.basename(pred_pdb),
                     pred_st,
                     "b_facs",
                     pred_bfacs,
                 )
+                # save rmsfs of pred ensemble
+                save_b_fac_pdb(
+                    os.path.dirname(pred_pdb),
+                    os.path.basename(pred_pdb),
+                    pred_st,
+                    "rmsfs",
+                    pred_rmsfs,
+                )
 
-            # Append list of atomic displacements for this pred_ensemble
-            min_rmsd_disps.append(min_rmsd_disp)
-            min_rmsd_bb_disps.append(min_rmsd_bb_disp)
-            min_rmsd_sc_disps.append(min_rmsd_sc_disp)
+        # Extend list of atomic displacements for this pred_ensemble
+        min_rmsd_disps.append(min_rmsd_disp)
+        min_rmsd_bb_disps.append(min_rmsd_bb_disp)
+        min_rmsd_sc_disps.append(min_rmsd_sc_disp)
 
     # Plot violinplots of per-atom min_rmsd_displacements
     # One violin per pred ensemble
     # for all atoms
     plot_violin_noextras(
-        min_rmsd_labels,
+        shorten_labels(min_rmsd_labels),
         min_rmsd_disps,
         "Ensemble",
         "Atom distance to min-RMSD GT model (Å)",
@@ -450,7 +512,7 @@ def main(args):
     )
     # for backbone
     plot_violin_noextras(
-        min_rmsd_labels,
+        shorten_labels(min_rmsd_labels),
         min_rmsd_bb_disps,
         "Ensemble",
         "Backbone atom distance to min-RMSD GT model (Å)",
@@ -459,7 +521,7 @@ def main(args):
     )
     # for sidechain
     plot_violin_noextras(
-        min_rmsd_labels,
+        shorten_labels(min_rmsd_labels),
         min_rmsd_sc_disps,
         "Ensemble",
         "Sidechain atom distance to min-RMSD GT model (Å)",
@@ -472,7 +534,7 @@ def main(args):
     # (including GT). This shows range of flexibility globally.
     # for all atoms
     plot_violin_noextras(
-        bfacs_labels,
+        shorten_labels(bfacs_labels),
         bfacs,
         "Ensemble",
         "B-factor (atom) (Å^2)",
@@ -484,7 +546,7 @@ def main(args):
     for bfac in bfacs:
         bfacs_bb_only.append([bf for mask, bf in zip(bb_mask, bfac) if mask])
     plot_violin_noextras(
-        bfacs_labels,
+        shorten_labels(bfacs_labels),
         bfacs_bb_only,
         "Ensemble",
         "B-factor backbone (atom) (Å^2)",
@@ -498,7 +560,7 @@ def main(args):
             [bf for mask, bf in zip(bb_mask, bfac) if not mask]
         )
     plot_violin_noextras(
-        bfacs_labels,
+        shorten_labels(bfacs_labels),
         bfacs_sc_only,
         "Ensemble",
         "B-factor sidechain (atom) (Å^2)",
@@ -511,6 +573,11 @@ def main(args):
     # Do you want to use CA atoms only?
     # Which regions of the 6xou do you want to highlight?
     # D1, D4 lnk, but also switches?
+
+    # TODO Load the saved pdb files with RMSF values
+    # GT
+
+    # pred ensembles
 
     # TODO Plot smoothed scatterplots (lines) showing b-factors
     # along the atoms in the atomic model. This shows local

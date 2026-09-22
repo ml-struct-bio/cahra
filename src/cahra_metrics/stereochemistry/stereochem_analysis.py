@@ -42,6 +42,7 @@ from cahra_metrics.utilities.utils import (
     Ensemble_Stats,
     save_dict_to_json,
     get_ensemble,
+    shorten_labels,
 )
 
 
@@ -471,6 +472,7 @@ def plot_violin(
     hline_label: str,
     plot_dir: str,
     plot_name: str,
+    shift_leg: bool = False,
 ):
     # check that vals are not all zero
     mask = []
@@ -532,21 +534,39 @@ def plot_violin(
         label=hline_label,
     )
     # add legend for mean and median
-    plt.legend(
-        handles=[
-            plt.Line2D([0], [0], color="blue", linewidth=2, label="Mean"),
-            plt.Line2D([0], [0], color="red", linewidth=2, label="Median"),
-            plt.Line2D(
-                [0],
-                [0],
-                color="purple",
-                linewidth=2,
-                linestyle="--",
-                label="6XOU",
-            ),
-        ],
-        loc="upper right",
-    )
+    if shift_leg:
+        plt.legend(
+            handles=[
+                plt.Line2D([0], [0], color="blue", linewidth=2, label="Mean"),
+                plt.Line2D([0], [0], color="red", linewidth=2, label="Median"),
+                plt.Line2D(
+                    [0],
+                    [0],
+                    color="purple",
+                    linewidth=2,
+                    linestyle="--",
+                    label="6XOU",
+                ),
+            ],
+            loc="upper left",
+            bbox_to_anchor=(1.0, 1),
+        )
+    else:
+        plt.legend(
+            handles=[
+                plt.Line2D([0], [0], color="blue", linewidth=2, label="Mean"),
+                plt.Line2D([0], [0], color="red", linewidth=2, label="Median"),
+                plt.Line2D(
+                    [0],
+                    [0],
+                    color="purple",
+                    linewidth=2,
+                    linestyle="--",
+                    label="6XOU",
+                ),
+            ],
+            loc="upper right",
+        )
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, plot_name + ".png"), dpi=300)
     plt.savefig(os.path.join(plot_dir, plot_name + ".pdf"))
@@ -967,7 +987,7 @@ def main(args):
     # Add hlines for recommended value and 6xou value
     # rota_outlier_percentage
     plot_violin(
-        ens_geom_lists["labels"],
+        shorten_labels(ens_geom_lists["labels"]),
         ens_geom_lists["rota_outlier_percentage"],
         "Ensemble",
         "Rotamer Outlier Percentage",
@@ -977,10 +997,11 @@ def main(args):
         "6XOU",
         results["pred_confs_dir"],  # should be okay as GT,6xou created above
         "rota_outlier_percentage",
+        shift_leg=True,
     )
     # rama_outlier_percentage
     plot_violin(
-        ens_geom_lists["labels"],
+        shorten_labels(ens_geom_lists["labels"]),
         ens_geom_lists["rama_outlier_percentage"],
         "Ensemble",
         "Ramuchandran Outlier Percentage",
@@ -993,7 +1014,7 @@ def main(args):
     )
     # rama_favored_percentage
     plot_violin(
-        ens_geom_lists["labels"],
+        shorten_labels(ens_geom_lists["labels"]),
         ens_geom_lists["rama_favored_percentage"],
         "Ensemble",
         "Ramuchandran Favored Percentage",
@@ -1003,10 +1024,11 @@ def main(args):
         "6XOU",
         results["pred_confs_dir"],  # should be okay as GT,6xou created above
         "rama_favored_percentage",
+        shift_leg=True,
     )
     # clashscore
     plot_violin(
-        ens_geom_lists["labels"],
+        shorten_labels(ens_geom_lists["labels"]),
         ens_geom_lists["clashscore"],
         "Ensemble",
         "Clash Score",
