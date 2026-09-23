@@ -230,8 +230,8 @@ def ensemble_validation(
                         )
 
                         # check atom serial number is identical
-                        """
-                        assert ref_atom.serial==atom.serial, (
+
+                        assert ref_atom.serial == atom.serial, (
                             "Ensemble {}, model {}, chain {}, residue {},"
                             "atom {} serial numbers do not match: {} vs {}"
                         ).format(
@@ -243,7 +243,7 @@ def ensemble_validation(
                             ref_atom.serial,
                             atom.serial,
                         )
-                        """
+
                         # check atom is not hydrogen
                         # see https://gemmi.readthedocs.io/en/latest/mol.html
                         assert ~atom.is_hydrogen(), (
