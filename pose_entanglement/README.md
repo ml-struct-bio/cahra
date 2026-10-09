@@ -1,0 +1,1 @@
+Compute the pose entanglement scoring metrics with the command: `python scoring.py ground_truth_star_fname=... pre_wranggled_submissions_fname=...`
