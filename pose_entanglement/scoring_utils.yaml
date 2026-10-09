@@ -1,0 +1,34 @@
+rotation_symetry: 11
+metrics:
+  lower_better:
+    - rot_mean
+    - rot_median_error
+    - rot_10th_percentile_error
+    - rot_90th_percentile_error
+    - state_global_l1_hard
+    - state_global_l1_soft
+    - state_local_l1_hard
+    - state_local_l1_soft
+    - state_cross_entropy_soft
+    - state_cross_entropy_hard
+  higher_better:
+    - state_accuracy
+    - state_precision
+    - state_recall
+    - state_auc
+  rotation_metrics:
+    - rot_mean
+    - rot_median_error
+    - rot_10th_percentile_error
+    - rot_90th_percentile_error
+  state_metrics:
+    - state_global_l1_hard
+    - state_global_l1_soft
+    - state_local_l1_hard
+    - state_local_l1_soft
+    - state_accuracy
+    - state_precision
+    - state_recall
+    - state_auc
+    - state_cross_entropy_soft
+    - state_cross_entropy_hard
