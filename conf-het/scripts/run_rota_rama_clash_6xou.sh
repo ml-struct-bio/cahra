@@ -4,7 +4,7 @@ source /opt/xtal/ccp4-9/bin/ccp4.setup-sh
 wait $!
 
 # setup env vars
-METRICS_LABEL="_v6"
+METRICS_LABEL="_label"
 
 LOG_DIR="run_rota_rama_clash${METRICS_LABEL}"
 EXT="pdb"

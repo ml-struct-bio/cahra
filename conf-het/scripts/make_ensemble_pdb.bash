@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-METRICS_LABEL="_v6_backbone_only"
+METRICS_LABEL="_label"
 
 LOG_DIR="make_ensemble_pdb${METRICS_LABEL}"
 OUTPUT_DIR="metric_calculation${METRICS_LABEL}"
@@ -16,7 +16,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="lemon1"
+label="poised-bobcat-1"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -25,7 +25,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="lemon2"
+label="poised-bobcat-2"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -34,7 +34,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="lemon3"
+label="poised-bobcat-3"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -43,7 +43,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="lime1"
+label="exotic-stingray-1"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -52,7 +52,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="lime2"
+label="exotic-stingray-2"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -61,7 +61,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="orange1"
+label="curious-fulmar-1"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -70,7 +70,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="orange2"
+label="curious-fulmar-2"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -79,7 +79,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="kiwi1"
+label="persuasive-penguins-1"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -88,7 +88,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="kiwi2"
+label="persuasive-penguins-2"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -97,7 +97,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="kiwi3"
+label="persuasive-penguins-3"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -106,7 +106,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="kiwi4"
+label="persuasive-penguins-4"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -115,7 +115,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="kiwi5"
+label="persuasive-penguins-5"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -124,7 +124,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="banana1"
+label="kiharalab-1"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"
@@ -133,7 +133,7 @@ cahra-metrics make_ensemble_pdb -d $ensemble_dir -o $output_ensemble_dir -e $EXT
 wait $!
 
 # get ensemble pdb for the min-rmsd-aligned pred ensembles
-label="banana2"
+label="kiharalab-2"
 ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
 output_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/ensemble_pdb"
 ensemble_pdb_label="ensemble_pdb_${label}"

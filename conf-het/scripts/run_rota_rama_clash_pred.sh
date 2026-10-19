@@ -4,7 +4,7 @@ source /opt/xtal/ccp4-9/bin/ccp4.setup-sh
 wait $!
 
 # setup env vars
-METRICS_LABEL="_v6"
+METRICS_LABEL="_label"
 
 LOG_DIR="run_rota_rama_clash${METRICS_LABEL}"
 EXT="pdb"
@@ -12,8 +12,18 @@ OUTPUT_DIR="metric_calculation${METRICS_LABEL}"
 
 mkdir $LOG_DIR
 
-aligned_ensemble_dir="${OUTPUT_DIR}/gt_confs/pdbs"
-log_dir="${LOG_DIR}/gt_confs/${EXT}"
+# label is now provided as a command line argument
+label="$1"
+if [ -z "$label" ]; then
+    echo "Usage: $0 <label>"
+    echo "Example: $0 kiwi1"
+    exit 1
+fi
+
+# NOTE CHANGED THIS TO ORIGINAL (CIF TO PDB TRANSLATED MODELS)
+# - THE GEOMETRY IS WEIRD - PERHAPS BAD ATOM ORDERING BY MDANALAYSIS?
+aligned_ensemble_dir="prelim_submissions/${label}/confs_pdb"
+log_dir="${LOG_DIR}/pred_confs/${label}/${EXT}"
 mkdir -p $log_dir
 # NOTE: could add hydrogens with reduce
 # --- Run Ramachandran analysis on every PDB in the ensemble ---

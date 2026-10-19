@@ -4,7 +4,7 @@ source /opt/xtal/ccp4-9/bin/ccp4.setup-sh
 wait $!
 
 # setup env vars
-METRICS_LABEL="_v6"
+METRICS_LABEL="_label"
 
 LOG_DIR="run_rota_rama_clash${METRICS_LABEL}"
 EXT="pdb"
@@ -12,16 +12,8 @@ OUTPUT_DIR="metric_calculation${METRICS_LABEL}"
 
 mkdir $LOG_DIR
 
-# label is now provided as a command line argument
-label="$1"
-if [ -z "$label" ]; then
-    echo "Usage: $0 <label>"
-    echo "Example: $0 kiwi1"
-    exit 1
-fi
-
-aligned_ensemble_dir="${OUTPUT_DIR}/pred_confs/${label}/pdbs"
-log_dir="${LOG_DIR}/pred_confs/${label}/${EXT}"
+aligned_ensemble_dir="${OUTPUT_DIR}/gt_confs/pdbs"
+log_dir="${LOG_DIR}/gt_confs/${EXT}"
 mkdir -p $log_dir
 # NOTE: could add hydrogens with reduce
 # --- Run Ramachandran analysis on every PDB in the ensemble ---

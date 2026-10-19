@@ -210,7 +210,14 @@ __marimo__/
 *_autosummary
 
 # Preliminary Scoring directory
-prelim_scoring/*
+scoring/*
+
+# Submitted ensembles
+submissions
+submissions.zip
+
+# Conformations Prep for Zenodo
+submissions/*
 
 # Agentic planning notes directory
 planning_references/*

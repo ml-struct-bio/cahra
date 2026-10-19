@@ -1,11 +1,11 @@
 #!/usr/bin/bash
-METRICS_LABEL="_v9"
+METRICS_LABEL="_label"
 
 LOG_DIR="calc_pcv${METRICS_LABEL}"
 OUTPUT_DIR="metric_calculation${METRICS_LABEL}"
 
 TRUTH_ENSEMBLE_DIR="${OUTPUT_DIR}/gt_confs/pdbs"
-MAX_RANK=100 # updated from 50 to 100 from v4 and up
+MAX_RANK=100
 
 mkdir $LOG_DIR
 

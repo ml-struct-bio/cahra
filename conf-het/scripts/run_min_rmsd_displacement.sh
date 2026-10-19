@@ -1,41 +1,50 @@
 #!/usr/bin/bash
 
-METRICS_LABEL="_v6"
-LOG_DIR="stereochem_analysis${METRICS_LABEL}"
+METRICS_LABEL="_label"
+LOG_DIR="min_rmsd_displacement${METRICS_LABEL}"
 RESULTS_DIR="metric_calculation${METRICS_LABEL}"
 JSON="all_metrics.json"
 
 mkdir -p $LOG_DIR
 
-lemon1_label="lemon1"
-lemon1_json="${RESULTS_DIR}/pred_confs/${lemon1_label}/results/${JSON}"
-lemon2_label="lemon2"
-lemon2_json="${RESULTS_DIR}/pred_confs/${lemon2_label}/results/${JSON}"
-lemon3_label="lemon3"
-lemon3_json="${RESULTS_DIR}/pred_confs/${lemon3_label}/results/${JSON}"
-lime1_label="lime1"
-lime1_json="${RESULTS_DIR}/pred_confs/${lime1_label}/results/${JSON}"
-lime2_label="lime2"
-lime2_json="${RESULTS_DIR}/pred_confs/${lime2_label}/results/${JSON}"
-orange1_label="orange1"
-orange1_json="${RESULTS_DIR}/pred_confs/${orange1_label}/results/${JSON}"
-orange2_label="orange2"
-orange2_json="${RESULTS_DIR}/pred_confs/${orange2_label}/results/${JSON}"
-kiwi1_label="kiwi1"
-kiwi1_json="${RESULTS_DIR}/pred_confs/${kiwi1_label}/results/${JSON}"
-kiwi2_label="kiwi2"
-kiwi2_json="${RESULTS_DIR}/pred_confs/${kiwi2_label}/results/${JSON}"
-kiwi3_label="kiwi3"
-kiwi3_json="${RESULTS_DIR}/pred_confs/${kiwi3_label}/results/${JSON}"
-kiwi4_label="kiwi4"
-kiwi4_json="${RESULTS_DIR}/pred_confs/${kiwi4_label}/results/${JSON}"
-kiwi5_label="kiwi5"
-kiwi5_json="${RESULTS_DIR}/pred_confs/${kiwi5_label}/results/${JSON}"
-banana1_label="banana1"
-banana1_json="${RESULTS_DIR}/pred_confs/${banana1_label}/results/${JSON}"
-banana2_label="banana2"
-banana2_json="${RESULTS_DIR}/pred_confs/${banana2_label}/results/${JSON}"
+poised_bobcat_1_label="poised-bobcat-1"
+poised_bobcat_1_json="${RESULTS_DIR}/pred_confs/${poised_bobcat_1_label}/results/${JSON}"
+poised_bobcat_2_label="poised-bobcat-2"
+poised_bobcat_2_json="${RESULTS_DIR}/pred_confs/${poised_bobcat_2_label}/results/${JSON}"
+poised_bobcat_3_label="poised-bobcat-3"
+poised_bobcat_3_json="${RESULTS_DIR}/pred_confs/${poised_bobcat_3_label}/results/${JSON}"
+exotic_stingray_1_label="exotic-stingray-1"
+exotic_stingray_1_json="${RESULTS_DIR}/pred_confs/${exotic_stingray_1_label}/results/${JSON}"
+exotic_stingray_2_label="exotic-stingray-2"
+exotic_stingray_2_json="${RESULTS_DIR}/pred_confs/${exotic_stingray_2_label}/results/${JSON}"
+curious_fulmar_1_label="curious-fulmar-1"
+curious_fulmar_1_json="${RESULTS_DIR}/pred_confs/${curious_fulmar_1_label}/results/${JSON}"
+curious_fulmar_2_label="curious-fulmar-2"
+curious_fulmar_2_json="${RESULTS_DIR}/pred_confs/${curious_fulmar_2_label}/results/${JSON}"
+persuasive_penguins_1_label="persuasive-penguins-1"
+persuasive_penguins_1_json="${RESULTS_DIR}/pred_confs/${persuasive_penguins_1_label}/results/${JSON}"
+persuasive_penguins_2_label="persuasive-penguins-2"
+persuasive_penguins_2_json="${RESULTS_DIR}/pred_confs/${persuasive_penguins_2_label}/results/${JSON}"
+persuasive_penguins_3_label="persuasive-penguins-3"
+persuasive_penguins_3_json="${RESULTS_DIR}/pred_confs/${persuasive_penguins_3_label}/results/${JSON}"
+persuasive_penguins_4_label="persuasive-penguins-4"
+persuasive_penguins_4_json="${RESULTS_DIR}/pred_confs/${persuasive_penguins_4_label}/results/${JSON}"
+persuasive_penguins_5_label="persuasive-penguins-5"
+persuasive_penguins_5_json="${RESULTS_DIR}/pred_confs/${persuasive_penguins_5_label}/results/${JSON}"
+kiharalab_1_label="kiharalab-1"
+kiharalab_1_json="${RESULTS_DIR}/pred_confs/${kiharalab_1_label}/results/${JSON}"
+kiharalab_2_label="kiharalab-2"
+kiharalab_2_json="${RESULTS_DIR}/pred_confs/${kiharalab_2_label}/results/${JSON}"
 
-cahra-metrics min_rmsd_displacement -pe $lemon1_json \
--pl $lemon1_label \
+cahra-metrics min_rmsd_displacement -pe \
+$poised_bobcat_1_json $poised_bobcat_2_json $poised_bobcat_3_json \
+$exotic_stingray_1_json $exotic_stingray_2_json \
+$curious_fulmar_1_json $curious_fulmar_2_json \
+$persuasive_penguins_1_json $persuasive_penguins_2_json $persuasive_penguins_3_json $persuasive_penguins_4_json $persuasive_penguins_5_json $kiharalab_1_json $kiharalab_2_json \
+-pl \
+$poised_bobcat_1_label $poised_bobcat_2_label $poised_bobcat_3_label \
+$exotic_stingray_1_label $exotic_stingray_2_label \
+$curious_fulmar_1_label $curious_fulmar_2_label \
+$persuasive_penguins_1_label $persuasive_penguins_2_label $persuasive_penguins_3_label $persuasive_penguins_4_label $persuasive_penguins_5_label \
+$kiharalab_1_label $kiharalab_2_label \
 -v > $LOG_DIR/min_rmsd_displacement${METRICS_LABEL}.log

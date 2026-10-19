@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-METRICS_LABEL="_v9"
+METRICS_LABEL="_label"
 LOG_DIR="ensemble_maps${METRICS_LABEL}"
 
 mkdir -p $LOG_DIR
