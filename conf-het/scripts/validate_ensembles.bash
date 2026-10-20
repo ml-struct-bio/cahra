@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 LOG_DIR="validate_ensembles_logs"
-TRUTH_PDB_DIR="extract_frames_6xou_unsteered_0-200ns"
+TRUTH_PDB_DIR="submissions/extract_frames_6xou_unsteered_0-200ns"
 FILE_EXT="pdb"
 
 mkdir $LOG_DIR
