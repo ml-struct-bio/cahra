@@ -22,7 +22,7 @@ fi
 
 # NOTE CHANGED THIS TO ORIGINAL (CIF TO PDB TRANSLATED MODELS)
 # - THE GEOMETRY IS WEIRD - PERHAPS BAD ATOM ORDERING BY MDANALAYSIS?
-aligned_ensemble_dir="prelim_submissions/${label}/confs_pdb"
+aligned_ensemble_dir="submissions/${label}/confs_pdb"
 log_dir="${LOG_DIR}/pred_confs/${label}/${EXT}"
 mkdir -p $log_dir
 # NOTE: could add hydrogens with reduce
