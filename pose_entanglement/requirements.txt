@@ -1,0 +1,9 @@
+numpy
+scipy
+jax
+hydra
+pandas
+scikit-learn
+starfile
+matplotlib
+omegaconf
