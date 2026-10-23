@@ -1,7 +1,7 @@
 numpy
 scipy
 jax
-hydra
+hydra-core
 pandas
 scikit-learn
 starfile

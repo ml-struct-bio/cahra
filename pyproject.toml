@@ -7,9 +7,14 @@ name = "CAHRA-metrics"
 version = "0.0.1"
 authors = [
   { name="Joel Greer", email="joel.greer@stfc.ac.uk" },
-  { name="Tom Burnley" },
-  { name="Pilar Cossio" },
+  { name="Geoffrey Woollard" },
+  { name="Ryan Feathers" },
+  { name="Robert Heeter" },
   { name="David Silva Sanchez" },
+  { name="Ellen Zhong" },
+  { name="Tom Burnley" },
+  { name="Sonya Hanson" },
+  { name="Pilar Cossio" },
 ]
 description = "Metric calculation for CAHRA Challenge, conformational heterogeneity dataset"
 readme = "README.md"
@@ -22,21 +27,25 @@ classifiers = [
 ]
 dependencies = [
     "argparse",
-    "pathlib",
     "gemmi",
-    "numpy",
+    "gemmi-program",
     "glob2",
-    "pandas",
+    "hydra-core",
+    "jax",
+    "lxml_html_clean",
     "matplotlib",
-    "scipy",
     "MDAnalysis",
+    "mdtraj",
     "natsort",
+    "numpy",
+    "omegaconf",
+    "pandas",
+    "pathlib",
+    "scikit-learn",
+    "scipy",
+    "starfile",
     "tabulate",
     "torch",
-    "mdtraj",
-    "lxml_html_clean",
-    "gemmi-program",
-    "scikit-learn",
     "umap-learn"
 ]
 

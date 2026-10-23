@@ -1,4 +1,4 @@
-# comp-het
+# Compositional Heterogeneity Challenge Evaluation
 
 Evaluate particle classifications for the CAHRA compositional heterogeneity
 challenge. The tool matches submitted particles to ground-truth species and
@@ -14,6 +14,7 @@ Install the Python dependencies and run the bundled control:
 
 ```bash
 cd comp-het
+<create and/or activate python3 environment>
 python -m pip install -r requirements.txt
 python -m comphet
 ```
@@ -170,11 +171,14 @@ labels = pd.read_pickle("source_labels.pkl.gz")
 ```
 
 The full `source.star` is available with
-[EMPIAR-13973](https://empiar.pdbj.org/en/entry/13973/). Use it directly with
-`--reference` (also accepts `source.star.gz`), or regenerate the compact file:
+[EMPIAR-13973](https://empiar.pdbj.org/en/entry/13973/). It can be downloaded directly with `wget "https://ftp.ebi.ac.uk/empiar/world_availability/13973/data/Particles/particles.star"` or similar. Use it directly with
+`--reference` (also accepts `source.star.gz`).
 
 ```bash
 python -m comphet --reference /path/to/source.star
+```
+You can regenerate the compact file via:
+```bash
 python -m comphet.make_reference /path/to/source.star source_labels.pkl.gz
 ```
 
