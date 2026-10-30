@@ -1,0 +1,92 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "CAHRA-metrics"
+version = "0.0.1"
+authors = [
+  { name="Joel Greer", email="joel.greer@stfc.ac.uk" },
+  { name="Geoffrey Woollard" },
+  { name="Ryan Feathers" },
+  { name="Robert Heeter" },
+  { name="David Silva Sanchez" },
+  { name="Ellen Zhong" },
+  { name="Tom Burnley" },
+  { name="Sonya Hanson" },
+  { name="Pilar Cossio" },
+]
+description = "Metric calculation for CAHRA Challenge, conformational heterogeneity dataset"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+keywords = ["cahra", "cryo-em", "micrographs", "synthetic", "single-particle", "heterogeneity", "reconstruction", "ensemble"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "argparse",
+    "gemmi",
+    "gemmi-program",
+    "glob2",
+    "hydra-core==1.4.0rc1",
+    "jax",
+    "lxml_html_clean",
+    "matplotlib",
+    "MDAnalysis",
+    "mdtraj",
+    "natsort",
+    "numpy",
+    "omegaconf",
+    "pandas",
+    "pathlib",
+    "scikit-learn",
+    "scipy",
+    "starfile",
+    "tabulate",
+    "torch",
+    "umap-learn"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit",
+    "pytest",
+    "black==26.3.1",
+    "flake8==7.3.0",
+    "mypy==1.20.0",
+    "types-tabulate"
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme>=1.2.0"
+]
+
+[project.scripts]
+cahra-metrics = "cahra_metrics.cli:main"
+
+[project.urls]
+"Homepage" = "https://github.com/JatGreer/CAHRA-metrics"
+"Bug Tracker" = "https://github.com/JatGreer/CAHRA-metrics/issues"
+
+[tool.licensecheck]
+license = "mit"
+file = "licensecheck.json"
+format = "json"
+
+[tool.flake8]
+ignore = ['E231', 'E241']
+per-file-ignores = [
+    '__init__.py:F401',
+]
+max-line-length = 88
+count = true
+
+[[tool.mypy.overrides]]
+module = [
+    "mdtraj.*",
+    "tabulate.*"
+]
+ignore_missing_imports = true
+
