@@ -1,7 +1,7 @@
 precomputed_fname: null 
 ground_truth_star_fname: ???
 output_dir: ./
-pre_wranggled_submissions_fname: ???
+pre_wrangled_submissions_fname: ???
 metrics:
   lower_better:
     - rot_mean

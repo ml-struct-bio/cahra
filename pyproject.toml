@@ -30,7 +30,7 @@ dependencies = [
     "gemmi",
     "gemmi-program",
     "glob2",
-    "hydra-core",
+    "hydra-core==1.4.0rc1",
     "jax",
     "lxml_html_clean",
     "matplotlib",

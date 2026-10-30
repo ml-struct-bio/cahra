@@ -20,7 +20,7 @@ from rotation_metrics import compute_symmetry_matrices
 
 def ground_truth(fname):
     gt = starfile.read(fname)["particles"]
-    s_gt = gt["state"]
+    s_gt = gt["rlnstate"]
     rotation_gt_mat = R.from_euler(
         "ZYZ",
         angles=gt[["rlnAngleRot", "rlnAngleTilt", "rlnAnglePsi"]].values,
@@ -118,7 +118,7 @@ def main(config: DictConfig):
                     "geodesic_deg": geodesic_deg,
                     "state": s_gt,
                     "predicted_state": s_pred,
-                    "snr": gt["snr"],
+                    "snr": gt["rlnsnr"],
                 }
             )
         # pickle
