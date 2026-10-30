@@ -1,6 +1,6 @@
 precomputed_fname: null 
 ground_truth_star_fname: ???
-output_dir: ???
+output_dir: ./
 pre_wranggled_submissions_fname: ???
 metrics:
   lower_better:
